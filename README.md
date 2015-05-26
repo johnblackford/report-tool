@@ -1,2 +1,2 @@
 # report-tool
-Replacement for the BBF Report Tool
+Starting point for a replacement for the BBF Report Tool
