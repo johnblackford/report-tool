@@ -11,6 +11,7 @@
 
 import nodes
 import logging
+import cStringIO
 
 from abstractIOHandlers import AbstractOutputWriter
 
@@ -34,26 +35,42 @@ class TextOutputWriter(AbstractOutputWriter):
 
   def write(self, doc, filename):
     console = False
+    output_buffer = cStringIO.StringIO()
     logger = logging.getLogger(self.__class__.__name__)
 
+    self._generate_content(doc, output_buffer)
+
     if len(filename) == 0:
-      self._write_to_console(doc)
+      self._write_to_console(output_buffer)
     else:
-      self._write_to_file(doc, filename)
+      self._write_to_file(output_buffer, filename)
+
+    output_buffer.close()
 
 
 
-  def _write_to_console(self, doc):
+  def _generate_content(self, doc, out_buffer):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    out_buffer.write("Document Spec: {}\n".format(doc.get_spec()))
+    out_buffer.write("Document File: {}\n".format(doc.get_file()))
+
+    out_buffer.write("Document Description:\n")
+    out_buffer.write("{}\n".format(doc.get_description()))
+
+
+
+  def _write_to_console(self, out_buffer):
     logger = logging.getLogger(self.__class__.__name__)
 
     if self.verbose_logging:
       logger.info("Writing to the console")
 
-    print "Document Description:"
-    print doc.get_description()
+    print out_buffer.getvalue()
 
 
-  def _write_to_file(self, doc, filename):
+
+  def _write_to_file(self, out_buffer, filename):
     logger = logging.getLogger(self.__class__.__name__)
 
     # Open the File for writing
@@ -61,8 +78,7 @@ class TextOutputWriter(AbstractOutputWriter):
       if self.verbose_logging:
         logger.info("Writing to the file: {}".format(filename))
 
-      out_file.write("Document Description:\n")
-      out_file.write("{}\n".format(doc.get_description()))
+      out_file.write(out_buffer.getvalue())
 
       if self.verbose_logging:
         logger.info("Finished writing the output file")
