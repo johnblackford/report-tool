@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 ## 
 ## File Name: report.py
@@ -153,7 +153,7 @@ def main(argv):
   try:
     opts, args = getopt.getopt(argv, "hi:I:o:O:vV", 
                    ["input-format=", "input-file=", "output-format=", "output-file=",
-                    "verbose", "version"])
+                    "help", "verbose", "version"])
   except getopt.GetoptError:
     print "Error Encountered:"
     logging.error("Error Encountered:")
@@ -166,7 +166,7 @@ def main(argv):
 
   # Process the input arguments
   for opt, arg in opts:
-    if opt == '-h':
+    if opt in ('-h', "--help"):
       print usage_str
       print "  -i|--input-format   :: Specify the input format (choice of: {})".format(available_input_formats)
       print "  -I|--input-file     :: Specify the input file"

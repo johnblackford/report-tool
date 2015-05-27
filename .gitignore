@@ -1,0 +1,5 @@
+# Ignore compiled python code
+*.pyc
+
+# Ignore the log files
+logs/*.log
