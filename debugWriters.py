@@ -21,12 +21,7 @@ class TextOutputWriter(AbstractOutputWriter):
 
   def __init__(self):
     self.doc = None
-    self.verbose_logging = False
 
-
-
-  def enable_verbose_logging(self):
-    self.verbose_logging = True
 
 
   def get_output_format(self):
@@ -62,10 +57,7 @@ class TextOutputWriter(AbstractOutputWriter):
 
   def _write_to_console(self, out_buffer):
     logger = logging.getLogger(self.__class__.__name__)
-
-    if self.verbose_logging:
-      logger.info("Writing to the console")
-
+    logger.info("Writing to the console")
     print out_buffer.getvalue()
 
 
@@ -75,11 +67,7 @@ class TextOutputWriter(AbstractOutputWriter):
 
     # Open the File for writing
     with open(filename, "w") as out_file:
-      if self.verbose_logging:
-        logger.info("Writing to the file: {}".format(filename))
-
+      logger.info("Writing to the file: {}".format(filename))
       out_file.write(out_buffer.getvalue())
-
-      if self.verbose_logging:
-        logger.info("Finished writing the output file")
+      logger.info("Finished writing the output file")
 

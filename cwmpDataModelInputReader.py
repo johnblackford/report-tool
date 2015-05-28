@@ -23,12 +23,7 @@ class DataModelInputReader(AbstractInputReader):
 
   def __init__(self):
     self.doc = nodes.Document()
-    self.verbose_logging = False
 
-
-
-  def enable_verbose_logging(self):
-    self.verbose_logging = True
 
 
   def get_input_format(self):
@@ -49,13 +44,9 @@ class DataModelInputReader(AbstractInputReader):
 
     # Open the File for reading
     with open(filename, "r") as in_file:
-      if self.verbose_logging:
-        logger.info("Starting to parse the input file: {}".format(filename))
-
+      logger.info("Starting to parse the input file: {}".format(filename))
       xml_dict = xmltodict.parse(in_file, process_namespaces=True, namespaces=namespaces)
-
-      if self.verbose_logging:
-        logger.info("Finished parsing the input file")
+      logger.info("Finished parsing the input file")
 
     # Process the File's Contents
     ### TODO: Complete this

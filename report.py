@@ -20,7 +20,6 @@
 
 
 ### TODO:
-# - Remove verbose logging
 # - Add -v | --validate as a command line option
 # - Add in validators (abstract class, config file, loading, calling)
 
@@ -60,7 +59,7 @@ def _get_class_from_property(class_type, prop_item):
     logging.warning("Issue with [{}] {}: Class [{}] within Module [{}] could not be found... Skipping"
       .format(name, class_type, class_name, mod_name))
 
-  return target_class;
+  return target_class
 
 
 
@@ -69,7 +68,6 @@ def main(argv):
   input_format = ""
   output_file = ""
   output_format = ""
-  verbose_logging = False
 
   input_reader = None
   output_writer = None
@@ -157,7 +155,7 @@ def main(argv):
   try:
     opts, args = getopt.getopt(argv, "hi:I:o:O:vV", 
                    ["input-format=", "input-file=", "output-format=", "output-file=",
-                    "help", "verbose", "version"])
+                    "help", "validate", "version"])
   except getopt.GetoptError:
     print "Error Encountered:"
     logging.error("Error Encountered:")
@@ -176,7 +174,7 @@ def main(argv):
       print "  -I|--input-file     :: Specify the input file"
       print "  -o|--output-format  :: Specify the output format (choice of: {})".format(available_output_formats)
       print "  -O|--output-file    :: Specify the output file (defaults to console)"
-      print "  -v|--verbose        :: Enable verbose logging"
+      print "  -v|--validate       :: Enable validation processing"
       print "  -V|--version        :: Print the version of the tool"
       sys.exit()
     elif opt in ("-i", "--input-format"):
@@ -187,9 +185,8 @@ def main(argv):
       output_format = arg
     elif opt in ("-O", "--output-file"):
       output_file = arg
-    elif opt in ("-v", "--verbose"):
-      verbose_logging = True
-      logging.info("Verbose Logging Enabled")
+    elif opt in ("-v", "--validate"):
+      validate_input = True
     elif opt in ("-V", "--version"):
       print "Report Tool :: version={}".format(_VERSION)
       sys.exit()
@@ -214,16 +211,12 @@ def main(argv):
   # Validate the input arguments have the proper values
   if input_reader_dict.has_key(input_format):
     input_reader = input_reader_dict[input_format]
-    if verbose_logging:
-      input_reader.enable_verbose_logging()
   else:
     fatal_arg_error = True
     error_list.append("ERROR: Input Format not supported")
 
   if output_writer_dict.has_key(output_format):
     output_writer = output_writer_dict[output_format]
-    if verbose_logging:
-      output_writer.enable_verbose_logging()
   else:
     fatal_arg_error = True
     error_list.append("ERROR: Output Format not supported")
@@ -240,15 +233,20 @@ def main(argv):
     print usage_str
     sys.exit(1)
   else:
-    if verbose_logging:
-      logging.info("Input Arguments have been validated")
-      logging.info(" - Input Format = {}".format(input_format))
-      logging.info(" - Input File = {}".format(input_file))
-      logging.info(" - Output Format = {}".format(output_format))
-      if len(output_file) == 0:
-        logging.info(" - No Output File specified; writing Output to console")
-      else:
-        logging.info(" - Output File = {}".format(output_file))
+    logging.info("Input Arguments have been validated")
+    logging.info(" - Input Format = {}".format(input_format))
+    logging.info(" - Input File = {}".format(input_file))
+    logging.info(" - Output Format = {}".format(output_format))
+
+    if len(output_file) == 0:
+      logging.info(" - No Output File specified... writing Output to console")
+    else:
+      logging.info(" - Output File = {}".format(output_file))
+
+    if validate_input:
+      logging.info(" - Input Validation is Enabled")
+    else:
+      logging.info(" - Input Validation is NOT Enabled")
 
 
   output_writer.write(input_reader.read(input_file), output_file)
