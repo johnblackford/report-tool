@@ -35,8 +35,12 @@ class DataModelInputReader(AbstractInputReader):
     logger = logging.getLogger(self.__class__.__name__)
 
     # Use these standard namespaces
-    ### TODO: Probably need to map all versions of "dm" and "dmr" into the same value
     namespaces = {
+      "urn:broadband-forum-org:cwmp:datamodel-1-0": "dm",
+      "urn:broadband-forum-org:cwmp:datamodel-1-1": "dm",
+      "urn:broadband-forum-org:cwmp:datamodel-1-2": "dm",
+      "urn:broadband-forum-org:cwmp:datamodel-1-3": "dm",
+      "urn:broadband-forum-org:cwmp:datamodel-1-4": "dm",
       "urn:broadband-forum-org:cwmp:datamodel-1-5": "dm",
       "urn:broadband-forum-org:cwmp:datamodel-report-0-1": "dmr",
       "http://www.w3.org/2001/XMLSchema-instance": "xsi"
@@ -51,10 +55,9 @@ class DataModelInputReader(AbstractInputReader):
     # Process the File's Contents
     ### TODO: Complete this
     ### TODO: Create methods to handle the various parts
-    ### TODO: Need to deal with files that don't have a Document - probably still want to use Document Node
-    self.doc.set_spec(xml_dict["dm:document"]["@spec"])
-    self.doc.set_file(xml_dict["dm:document"]["@file"])
-    self.doc.set_description(xml_dict["dm:document"]["description"])
+    self.doc.set_spec(xml_dict["dm:document"].get("@spec", "UNKNOWN"))
+    self.doc.set_file(xml_dict["dm:document"].get("@file", "UNKNOWN"))
+    self.doc.set_description(xml_dict["dm:document"].get("description", "[Description not provided]"))
 
     return self.doc
 
