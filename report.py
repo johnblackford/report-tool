@@ -68,6 +68,7 @@ def main(argv):
 
   validator = None
   validator_list = []
+  validate_input = False
 
   error_list = []
   fatal_arg_error = False
