@@ -30,9 +30,6 @@ import xmltodict
 import sys, getopt
 import importlib
 
-import debugWriters
-#import cwmpDataModelInputReader
-
 
 # Global Constants
 _VERSION = "0.1.0-alpha"

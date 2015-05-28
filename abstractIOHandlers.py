@@ -15,7 +15,7 @@
 class AbstractInputReader:
   """Abstract Input Reader - sub-classes MUST implement:
       - read() 
-      - get_input_format()
+      - get_input_format()"""
 
 
   def read(self, filename):
@@ -29,7 +29,7 @@ class AbstractInputReader:
 class AbstractOutputWriter:
   """Abstract Output Writer - sub-classes MUST implement:
       - write() 
-      - get_output_format()
+      - get_output_format()"""
 
 
   def write(self, document, filename):
