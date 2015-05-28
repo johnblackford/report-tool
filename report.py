@@ -19,6 +19,12 @@
 #  (Model would have a list of Parameters and a list of Objects and a list of Profiles; Object would have a list of Parameters and a list of Objects etc).
 
 
+### TODO:
+# - Remove verbose logging
+# - Add -v | --validate as a command line option
+# - Add in validators (abstract class, config file, loading, calling)
+
+
 import json
 import logging
 import xmltodict
@@ -31,6 +37,30 @@ import debugWriters
 
 # Global Constants
 _VERSION = "0.1.0-alpha"
+
+
+
+def _get_class_from_property(class_type, prop_item):
+  name = prop_item["Name"]
+  mod_name = prop_item["Module"]
+  class_name = prop_item["Class"]
+  target_class = None
+
+  logging.debug("Processing [{}] {} within Module [{}], and using Class [{}]"
+    .format(name, class_type, mod_name, class_name))
+
+  # import the module, get the class, and instantiate the class
+  try:
+    mod = importlib.import_module(mod_name)
+    target_class = getattr(mod, class_name)
+  except ImportError:
+    logging.warning("Issue with [{}] {}: Module [{}] could not be imported... Skipping"
+      .format(name, class_type, mod_name))
+  except AttributeError:
+    logging.warning("Issue with [{}] {}: Class [{}] within Module [{}] could not be found... Skipping"
+      .format(name, class_type, class_name, mod_name))
+
+  return target_class;
 
 
 
@@ -89,42 +119,16 @@ def main(argv):
 
   # Add Input Readers to the list
   for reader_item in readers_prop:
-    name = reader_item["Name"]
-    mod_name = reader_item["Module"]
-    class_name = reader_item["Class"]
-    logging.debug("Processing [{}] Input Reader within Module [{}], and using Class [{}]".format(name, mod_name, class_name))
-
-    # import the module, get the class, and add an instantiated version to the list
-    try:
-      mod = importlib.import_module(mod_name)
-      target_class = getattr(mod, class_name)
+    target_class = _get_class_from_property("Input Reader", reader_item)
+    if target_class is not None:
       input_reader_list.append(target_class())
-    except ImportError:
-      logging.warning("Issue with [{}] InputReader: Module [{}] could not be imported... Skipping"
-        .format(name, mod_name))
-    except AttributeError:
-      logging.warning("Issue with [{}] InputReader: Class [{}] within Module [{}] could not be found... Skipping"
-        .format(name, class_name, mod_name))
 
 
   # Add Output Writers to the list
   for writer_item in writers_prop:
-    name = writer_item["Name"]
-    mod_name = writer_item["Module"]
-    class_name = writer_item["Class"]
-    logging.debug("Processing [{}] Output Writer within Module [{}], and using Class [{}]".format(name, mod_name, class_name))
-
-    # import the module, get the class, and add an instantiated version to the list
-    try:
-      mod = importlib.import_module(mod_name)
-      target_class = getattr(mod, class_name)
+    target_class = _get_class_from_property("Output Writer", writer_item)
+    if target_class is not None:
       output_writer_list.append(target_class())
-    except ImportError:
-      logging.warning("Issue with [{}] OutputWriter: Module [{}] could not be imported... Skipping"
-        .format(name, mod_name))
-    except AttributeError:
-      logging.warning("Issue with [{}] OutputWriter: Class [{}] within Module [{}] could not be found... Skipping"
-        .format(name, class_name, mod_name))
 
 
   # Build out Input Reader Dictionary
