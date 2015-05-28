@@ -8,6 +8,7 @@
 ## Functionality:
 ##  - Abstract Input Reader
 ##  - Abstract Output Writer
+##  - Abstract Validator
 ## 
 
 
@@ -36,5 +37,15 @@ class AbstractOutputWriter:
     raise NotImplementedError()
 
   def get_output_format(self):
+    raise NotImplementedError()
+
+
+
+class AbstractValidator:
+  """ Abstract Validator - sub-classes MUST implement:
+       - validate()"""
+
+
+  def validate(self, document):
     raise NotImplementedError()
 

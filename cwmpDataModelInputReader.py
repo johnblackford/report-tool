@@ -51,6 +51,7 @@ class DataModelInputReader(AbstractInputReader):
     # Process the File's Contents
     ### TODO: Complete this
     ### TODO: Create methods to handle the various parts
+    ### TODO: Need to deal with files that don't have a Document - probably still want to use Document Node
     self.doc.set_spec(xml_dict["dm:document"]["@spec"])
     self.doc.set_file(xml_dict["dm:document"]["@file"])
     self.doc.set_description(xml_dict["dm:document"]["description"])

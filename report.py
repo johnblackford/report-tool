@@ -19,11 +19,6 @@
 #  (Model would have a list of Parameters and a list of Objects and a list of Profiles; Object would have a list of Parameters and a list of Objects etc).
 
 
-### TODO:
-# - Add -v | --validate as a command line option
-# - Add in validators (abstract class, config file, loading, calling)
-
-
 import json
 import logging
 import xmltodict
@@ -71,6 +66,9 @@ def main(argv):
   input_reader_list = []
   output_writer_list = []
 
+  validator = None
+  validator_list = []
+
   error_list = []
   fatal_arg_error = False
 
@@ -85,6 +83,7 @@ def main(argv):
     log_level = prop_data["LogLevel"]
     readers_prop = prop_data["InputReaders"]
     writers_prop = prop_data["OutputWriters"]
+    validators_prop = prop_data["Validators"]
     ### TODO: Where should we put the properties?  
     ### TODO:  Should we have some kind of global Properties Manager object that can be accessed everywhere?
 
@@ -104,7 +103,7 @@ def main(argv):
   logging.info("#######################################################")
 
   # Log the properties that were read in
-  logging.info("The installation.properties file contained:")
+  logging.debug("The installation.properties file contained:")
   logging.debug("[LogLevel] property has value [{}]".format(log_level))
   if logging_level_failure:
     logging.warn("[LogLevel] property had an invalid value, using DEBUG instead")
@@ -124,6 +123,12 @@ def main(argv):
     target_class = _get_class_from_property("Output Writer", writer_item)
     if target_class is not None:
       output_writer_list.append(target_class())
+
+  # Add Validators to the list
+  for validator_item in validators_prop:
+    target_class = _get_class_from_property("Validator", validator_item)
+    if target_class is not None:
+      validator_list.append(target_class())
 
 
   # Build out Input Reader Dictionary
@@ -246,7 +251,20 @@ def main(argv):
       logging.info(" - Input Validation is NOT Enabled")
 
 
-  output_writer.write(input_reader.read(input_file), output_file)
+  # Main logic: read the file, validate the file, write the file
+  count = 0
+  num_validators = len(validator_list)
+
+  doc = input_reader.read(input_file)
+  logging.info("Starting to Validate the Input")
+
+  for validator in validator_list:
+    count += 1
+    logging.info("Invoking Validator {} of {}".format(count, num_validators))
+    validator.validate(doc)
+
+  logging.info("Input Validation is now Complete")
+  output_writer.write(doc, output_file)
 
 
 
