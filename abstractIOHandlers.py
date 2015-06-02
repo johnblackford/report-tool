@@ -13,7 +13,7 @@
 
 
 
-class AbstractInputReader:
+class AbstractInputReader(object):
   """Abstract Input Reader - sub-classes MUST implement:
       - read() 
       - get_input_format()"""
@@ -27,7 +27,7 @@ class AbstractInputReader:
 
 
 
-class AbstractOutputWriter:
+class AbstractOutputWriter(object):
   """Abstract Output Writer - sub-classes MUST implement:
       - write() 
       - get_output_format()"""
@@ -41,7 +41,7 @@ class AbstractOutputWriter:
 
 
 
-class AbstractValidator:
+class AbstractValidator(object):
   """ Abstract Validator - sub-classes MUST implement:
        - validate()"""
 
