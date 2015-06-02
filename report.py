@@ -56,6 +56,7 @@ def _get_class_from_property(class_type, prop_item):
 
 
 def main(argv):
+  prop_data = []
   input_file = ""
   input_format = ""
   output_file = ""
@@ -116,14 +117,18 @@ def main(argv):
   for reader_item in readers_prop:
     target_class = _get_class_from_property("Input Reader", reader_item)
     if target_class is not None:
-      input_reader_list.append(target_class())
+      input_reader_instance = target_class()
+      input_reader_instance.process_properties(reader_item.get("Config", {}))
+      input_reader_list.append(input_reader_instance)
 
 
   # Add Output Writers to the list
   for writer_item in writers_prop:
     target_class = _get_class_from_property("Output Writer", writer_item)
     if target_class is not None:
-      output_writer_list.append(target_class())
+      output_writer_instance = target_class()
+      output_writer_instance.process_properties(writer_item.get("Config", {}))
+      output_writer_list.append(output_writer_instance)
 
   # Add Validators to the list
   ### TODO: We probably want an additional field in the config file that associates 

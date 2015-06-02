@@ -21,11 +21,19 @@ class TextOutputWriter(AbstractOutputWriter):
 
   def __init__(self):
     self.doc = None
+    self.one_line_output = False
 
 
 
   def get_output_format(self):
     return "text"
+
+
+  def process_properties(self, props):
+    logger = logging.getLogger(self.__class__.__name__)
+    self.one_line_output = props.get("OneLine", False)
+    logger.info("One Line Output Property now set to: {}".format(self.one_line_output))
+
 
 
   def write(self, doc, filename):

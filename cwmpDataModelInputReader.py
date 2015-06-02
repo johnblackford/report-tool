@@ -30,6 +30,12 @@ class DataModelInputReader(AbstractInputReader):
     return "cwmp-dm"
 
 
+  def process_properties(self, props):
+    logger = logging.getLogger(self.__class__.__name__)
+    logger.info("This Input Reader has no Properties")
+  
+
+
   def read(self, filename):
     xml_dict = []
     logger = logging.getLogger(self.__class__.__name__)

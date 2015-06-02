@@ -16,7 +16,8 @@
 class AbstractInputReader(object):
   """Abstract Input Reader - sub-classes MUST implement:
       - read() 
-      - get_input_format()"""
+      - get_input_format()
+      - process_properties(props)"""
 
 
   def read(self, filename):
@@ -25,18 +26,25 @@ class AbstractInputReader(object):
   def get_input_format(self):
     raise NotImplementedError()
 
+  def process_properties(self, props):
+    raise NotImplementedError()
+
 
 
 class AbstractOutputWriter(object):
   """Abstract Output Writer - sub-classes MUST implement:
       - write() 
-      - get_output_format()"""
+      - get_output_format()
+      - process_properties(props)"""
 
 
   def write(self, document, filename):
     raise NotImplementedError()
 
   def get_output_format(self):
+    raise NotImplementedError()
+
+  def process_properties(self, props):
     raise NotImplementedError()
 
 
