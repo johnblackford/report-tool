@@ -126,6 +126,9 @@ def main(argv):
       output_writer_list.append(target_class())
 
   # Add Validators to the list
+  ### TODO: We probably want an additional field in the config file that associates 
+  ### TODO:  the Validator to a specific set of input readers. Would we also want to
+  ### TODO:  then assign these validators to their input_reader instances?
   for validator_item in validators_prop:
     target_class = _get_class_from_property("Validator", validator_item)
     if target_class is not None:
@@ -168,6 +171,8 @@ def main(argv):
     print usage_str
     sys.exit(2)
 
+
+  ### TODO: Need to think about how to handle multiple input files (with convenience)
 
   # Process the input arguments
   for opt, arg in opts:
