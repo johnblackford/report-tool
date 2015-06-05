@@ -41,7 +41,10 @@ class TextOutputWriter(AbstractOutputWriter):
     output_buffer = cStringIO.StringIO()
     logger = logging.getLogger(self.__class__.__name__)
 
-    self._generate_content(doc, output_buffer)
+    if self.one_line_output:
+      self._generate_one_line_content(doc, output_buffer)
+    else:
+      self._generate_content(doc, output_buffer)
 
     if len(filename) == 0:
       self._write_to_console(output_buffer)
@@ -50,6 +53,19 @@ class TextOutputWriter(AbstractOutputWriter):
 
     output_buffer.close()
 
+
+
+  def _generate_one_line_content(self, doc, out_buffer):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    trunc_desc = doc.get_description().split("\n")[0]
+    out_buffer.write("Document [spec={}], [file={}]: {}\n".format(doc.get_spec(), doc.get_file(), trunc_desc))
+    for data_type in doc.get_data_types():
+      if len(data_type.get_base()) == 0:
+        out_buffer.write("- DataType [name={}]: {}\n".format(data_type.get_name(), data_type.get_type().get_name()))
+      else:
+        ### TODO: Probably temporary, but if it hsa a base then it doesn't have a type
+        out_buffer.write("- DataType [name={}], [base={}]\n".format(data_type.get_name(), data_type.get_base()))
 
 
   def _generate_content(self, doc, out_buffer):
