@@ -165,29 +165,28 @@ class DataModelInputReader(AbstractInputReader):
 
     if isinstance(item, list):
       for size_list_item in item:
-        min_length = size_list_item.get("@minLength", None)
-        max_length = size_list_item.get("@maxLength", None)
-
-        a_size = nodes.Size()
-        a_size.set_min_length(min_length)
-        a_size.set_max_length(max_length)
-        logger.debug("Adding Size: minLength={}, maxLength={}".format(min_length, max_length))
+        a_size = self._create_size_for_type_facet(size_list_item)
+        logger.debug("Adding Size: minLength={}, maxLength={}".format(a_size.get_min_length(), a_size.get_max_length()))
         type_facet.add_size(a_size)
     else:
-      min_length = item.get("@minLength", None)
-      max_length = item.get("@maxLength", None)
-
-      a_size = nodes.Size()
-      a_size.set_min_length(min_length)
-      a_size.set_max_length(max_length)
-      logger.debug("Adding Size: minLength={}, maxLength={}".format(min_length, max_length))
+      a_size = self._create_size_for_type_facet(item)
+      logger.debug("Adding Size: minLength={}, maxLength={}".format(a_size.get_min_length(), a_size.get_max_length()))
       type_facet.add_size(a_size)
+
+
+  def _create_size_for_type_facet(self, item):
+    a_size = nodes.Size()
+    a_size.set_min_length(item.get("@minLength", None))
+    a_size.set_max_length(item.get("@maxLength", None))
+
+    return a_size
+
   
 
   def _process_patterns_for_type_facet(self, type_facet, item):
     logger = logging.getLogger(self.__class__.__name__)
 
-    # NOTE: Some pattern items are lists of Ordered Dictionaries and some are just an Ordered Dictionary
+    # NOTE: If there are multiple patters then it will be wrapped in a list, otherwise it won't
     if isinstance(item, list):
       for pattern_list_item in item:
         pattern_value = pattern_list_item["@value"]
