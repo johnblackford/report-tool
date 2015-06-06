@@ -310,3 +310,42 @@ class Pattern(object):
   def set_value(self, a_value):
     self.value = a_value
 
+
+class PathRef(object):
+  def __init__(self):
+    self.ref_type = ""
+    self.target_parent = ""
+    self.target_parent_scope = ""
+    self.target_type = ""
+    self.target_data_type = ""
+
+
+  def get_ref_type(self):
+    return self.ref_type
+
+  def set_ref_type(self, value):
+    self.ref_type = value
+
+  def get_target_parent(self):
+    return self.target_parent
+
+  def set_target_parent(self, value):
+    self.target_parent = value
+
+  def get_target_parent_scope(self):
+    return self.target_parent_scope
+
+  def set_target_parent_scope(self, value):
+    self.target_parent_scope = value
+
+  def get_target_type(self):
+    return self.target_type
+
+  def set_target_type(self, value):
+    self.target_type = value
+
+  def get_target_data_type(self):
+    return self.target_data_type
+
+  def set_target_data_type(self, value):
+    self.target_data_type = value

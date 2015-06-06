@@ -115,44 +115,64 @@ class DataModelInputReader(AbstractInputReader):
 
     if "base64" in item:
       type_facet = nodes.Base64Type()
-      if "size" in item["base64"]:
-        self._process_sizes_for_type_facet(type_facet, item["base64"]["size"])
+      logger.debug("- DataType Element is a \"base64\" type")
+      if item["base64"] is not None:
+        if "size" in item["base64"]:
+          self._process_sizes_for_type_facet(type_facet, item["base64"]["size"])
     elif "boolean" in item:
       type_facet = nodes.BooleanType()
+      logger.debug("- DataType Element is a \"boolean\" type")
     elif "dateTime" in item: 
       type_facet = nodes.DateTimeType() 
+      logger.debug("- DataType Element is a \"dateTime\" type")
     elif "hexBinary" in item: 
       type_facet = nodes.HexBinaryType() 
-      if "size" in item["hexBinary"]:
-        self._process_sizes_for_type_facet(type_facet, item["hexBinary"]["size"])
+      logger.debug("- DataType Element is a \"hexBinary\" type")
+      if item["hexBinary"] is not None:
+        if "size" in item["hexBinary"]:
+          self._process_sizes_for_type_facet(type_facet, item["hexBinary"]["size"])
     elif "int" in item:
       type_facet = nodes.NumericType("int")
-      ### TODO: Handle Range
-      ### TODO: Handle Units
+      logger.debug("- DataType Element is an \"int\" type")
+      if item["int"] is not None:
+        if "range" in item["int"]:
+          self.process_ranges_for_type_facet(type_facet, item["int"]["range"])
+        ### TODO: Handle Units
     elif "long" in item:
       type_facet = nodes.NumericType("long")
-      ### TODO: Handle Range
-      ### TODO: Handle Units
+      logger.debug("- DataType Element is a \"long\" type")
+      if item["long"] is not None:
+        if "range" in item["long"]:
+          self.process_ranges_for_type_facet(type_facet, item["long"]["range"])
+        ### TODO: Handle Units
     elif "string" in item:
       type_facet = nodes.StringType()
-      ### TODO: Redo these 2 as lists instead of single items
-      type_facet.add_path_ref(item["string"].get("pathRef", ""))
-      type_facet.add_enumeration_ref(item["string"].get("enumerationRef", ""))
-      ### TODO: Handle Enumerations
-
-      if "size" in item["string"]:
-        self._process_sizes_for_type_facet(type_facet, item["string"]["size"])
-
-      if "pattern" in item["string"]:
-        self._process_patterns_for_type_facet(type_facet, item["string"]["pattern"])
+      logger.debug("- DataType Element is a \"string\" type")
+      if item["string"] is not None:
+        if "pathRef" in item["string"]:
+          self._process_path_refs_for_type_facet(type_facet, item["string"]["pathRef"])
+#        if "enumerationRef" in item["string"]:
+#          self._process_enum_refs_for_type_facet(type_facet, item["string"]["enumerationRef"])
+        if "enumeration" in item["string"]:
+          self._process_enumerations_for_type_facet(type_facet, item["string"]["enumeration"])
+        if "size" in item["string"]:
+          self._process_sizes_for_type_facet(type_facet, item["string"]["size"])
+        if "pattern" in item["string"]:
+          self._process_patterns_for_type_facet(type_facet, item["string"]["pattern"])
     elif "unsignedInt" in item:
       type_facet = nodes.NumericType("unsignedInt")
-      ### TODO: Handle Range
-      ### TODO: Handle Units
+      logger.debug("- DataType Element is an \"unsignedInt\" type")
+      if item["unsignedInt"] is not None:
+        if "range" in item["unsignedInt"]:
+          self.process_ranges_for_type_facet(type_facet, item["unsignedInt"]["range"])
+        ### TODO: Handle Units
     elif "unsignedLong" in item:
       type_facet = nodes.NumericType("unsignedLong")
-      ### TODO: Handle Range
-      ### TODO: Handle Units
+      logger.debug("- DataType Element is an \"unsignedLong\" type")
+      if item["unsignedLong"] is not None:
+        if "range" in item["unsignedLong"]:
+          self.process_ranges_for_type_facet(type_facet, item["unsignedLong"]["range"])
+        ### TODO: Handle Units
     else:
       logger.error("Type Facet expected and not found")
 
@@ -163,14 +183,15 @@ class DataModelInputReader(AbstractInputReader):
   def _process_sizes_for_type_facet(self, type_facet, item):
     logger = logging.getLogger(self.__class__.__name__)
 
+    # NOTE: If there are multiple patters then it will be wrapped in a list, otherwise it won't
     if isinstance(item, list):
-      for size_list_item in item:
-        a_size = self._create_size_for_type_facet(size_list_item)
-        logger.debug("Adding Size: minLength={}, maxLength={}".format(a_size.get_min_length(), a_size.get_max_length()))
+      for list_item in item:
+        a_size = self._create_size_for_type_facet(list_item)
+        logger.debug("-- Adding Size: minLength={}, maxLength={}".format(a_size.get_min_length(), a_size.get_max_length()))
         type_facet.add_size(a_size)
     else:
       a_size = self._create_size_for_type_facet(item)
-      logger.debug("Adding Size: minLength={}, maxLength={}".format(a_size.get_min_length(), a_size.get_max_length()))
+      logger.debug("-- Adding Size: minLength={}, maxLength={}".format(a_size.get_min_length(), a_size.get_max_length()))
       type_facet.add_size(a_size)
 
 
@@ -183,23 +204,82 @@ class DataModelInputReader(AbstractInputReader):
 
   
 
-  def _process_patterns_for_type_facet(self, type_facet, item):
+  def _process_path_refs_for_type_facet(self, type_facet, item):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    # NOTE: If there are multiple instances then they will be wrapped in a list, otherwise it won't
+    if isinstance(item, list):
+      for list_item in item:
+        a_path_ref = self._create_path_ref_for_type_facet(list_item)
+        logger.debug("-- Adding Path Reference: {}/{}".format(a_path_ref.get_target_parent(), a_path_ref.get_target_type()))
+        type_facet.add_path_ref(a_path_ref)
+    else:
+      a_path_ref = self._create_path_ref_for_type_facet(item)
+      logger.debug("-- Adding Path Reference: {}/{}".format(a_path_ref.get_target_parent(), a_path_ref.get_target_type()))
+      type_facet.add_path_ref(a_path_ref)
+
+
+  def _create_path_ref_for_type_facet(self, item):
+    a_path_ref = nodes.PathRef()
+    a_path_ref.set_ref_type(item.get("@refType", ""))
+    a_path_ref.set_target_parent(item.get("@targetParent", ""))
+    a_path_ref.set_target_parent_scope(item.get("@targetParentScope", ""))
+    a_path_ref.set_target_type(item.get("@targetType", ""))
+    a_path_ref.set_target_data_type(item.get("@targetDataType", ""))
+
+    return a_path_ref
+
+  
+
+  ### TODO: Change to using a create method
+  def _process_ranges_for_type_facet(self, type_facet, item):
     logger = logging.getLogger(self.__class__.__name__)
 
     # NOTE: If there are multiple patters then it will be wrapped in a list, otherwise it won't
+    if isinstance(item, list):
+      for list_item in item:
+        step = list_item.get("@step", 1)
+        min_inclusive = list_item.get("@minInclusive", None)
+        max_inclusive = list_item.get("@maxInclusive", None)
+
+        a_range = nodes.Range()
+        a_range.set_step(step)
+        a_range.set_min_inclusive(min_inclusive)
+        a_range.set_max_inclusive(max_inclusive)
+        logger.debug("-- Adding Range: minInclusive={}, maxInclusive={}; step by {}".format(min_inclusive, max_inclusive, step))
+        type_facet.add_range(a_range)
+    else:
+      step = item.get("@step", 1)
+      min_inclusive = item.get("@minInclusive", None)
+      max_inclusive = item.get("@maxInclusive", None)
+
+      a_range = nodes.Range()
+      a_range.set_step(step)
+      a_range.set_min_inclusive(min_inclusive)
+      a_range.set_max_inclusive(max_inclusive)
+      logger.debug("-- Adding Range: minInclusive={}, maxInclusive={}; step by {}".format(min_inclusive, max_inclusive, step))
+      type_facet.add_range(a_range)
+
+  
+
+  ### TODO: Change to using a create method
+  def _process_patterns_for_type_facet(self, type_facet, item):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    # NOTE: If there are multiple instances then they will be wrapped in a list, otherwise it won't
     if isinstance(item, list):
       for pattern_list_item in item:
         pattern_value = pattern_list_item["@value"]
 
         a_pattern = nodes.Pattern()
         a_pattern.set_value(pattern_value)
-        logger.debug("Adding Pattern: \"{}\"".format(pattern_value))
+        logger.debug("-- Adding Pattern: \"{}\"".format(pattern_value))
         type_facet.add_pattern(a_pattern)
     else:
       pattern_value = item["@value"]
 
       a_pattern = nodes.Pattern()
       a_pattern.set_value(pattern_value)
-      logger.debug("Adding Pattern: \"{}\"".format(pattern_value))
+      logger.debug("-- Adding Pattern: \"{}\"".format(pattern_value))
       type_facet.add_pattern(a_pattern)
 
