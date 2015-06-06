@@ -305,7 +305,7 @@ class Pattern(object):
 
 
   def get_value(self):
-    return value
+    return self.value
 
   def set_value(self, a_value):
     self.value = a_value

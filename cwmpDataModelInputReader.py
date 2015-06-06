@@ -231,55 +231,51 @@ class DataModelInputReader(AbstractInputReader):
 
   
 
-  ### TODO: Change to using a create method
   def _process_ranges_for_type_facet(self, type_facet, item):
     logger = logging.getLogger(self.__class__.__name__)
 
     # NOTE: If there are multiple patters then it will be wrapped in a list, otherwise it won't
     if isinstance(item, list):
       for list_item in item:
-        step = list_item.get("@step", 1)
-        min_inclusive = list_item.get("@minInclusive", None)
-        max_inclusive = list_item.get("@maxInclusive", None)
-
-        a_range = nodes.Range()
-        a_range.set_step(step)
-        a_range.set_min_inclusive(min_inclusive)
-        a_range.set_max_inclusive(max_inclusive)
-        logger.debug("-- Adding Range: minInclusive={}, maxInclusive={}; step by {}".format(min_inclusive, max_inclusive, step))
+        a_range = self._create_range_for_type_facet(list_item)
+        logger.debug("-- Adding Range: minInclusive={}, maxInclusive={}; step by {}"
+          .format(a_range.get_min_inclusive(), a_range.get_max_inclusive(), a_range.get_step()))
         type_facet.add_range(a_range)
     else:
-      step = item.get("@step", 1)
-      min_inclusive = item.get("@minInclusive", None)
-      max_inclusive = item.get("@maxInclusive", None)
-
-      a_range = nodes.Range()
-      a_range.set_step(step)
-      a_range.set_min_inclusive(min_inclusive)
-      a_range.set_max_inclusive(max_inclusive)
-      logger.debug("-- Adding Range: minInclusive={}, maxInclusive={}; step by {}".format(min_inclusive, max_inclusive, step))
+      a_range = self._create_range_for_type_facet(item)
+      logger.debug("-- Adding Range: minInclusive={}, maxInclusive={}; step by {}"
+        .format(a_range.get_min_inclusive(), a_range.get_max_inclusive(), a_range.get_step()))
       type_facet.add_range(a_range)
 
-  
 
-  ### TODO: Change to using a create method
+  def _create_range_for_type_facet(self, item):
+    a_range = nodes.Range()
+    a_range.set_step(item.get("@step", 1))
+    a_range.set_min_inclusive(item.get("@minInclusive", None))
+    a_range.set_max_inclusive(item.get("@maxInclusive", None))
+
+    return a_range
+
+
+
   def _process_patterns_for_type_facet(self, type_facet, item):
     logger = logging.getLogger(self.__class__.__name__)
 
     # NOTE: If there are multiple instances then they will be wrapped in a list, otherwise it won't
     if isinstance(item, list):
-      for pattern_list_item in item:
-        pattern_value = pattern_list_item["@value"]
-
-        a_pattern = nodes.Pattern()
-        a_pattern.set_value(pattern_value)
-        logger.debug("-- Adding Pattern: \"{}\"".format(pattern_value))
+      for list_item in item:
+        a_pattern = self._create_pattern_for_type_facet(list_item)
+        logger.debug("-- Adding Pattern: \"{}\"".format(a_pattern.get_value()))
         type_facet.add_pattern(a_pattern)
     else:
-      pattern_value = item["@value"]
-
-      a_pattern = nodes.Pattern()
-      a_pattern.set_value(pattern_value)
-      logger.debug("-- Adding Pattern: \"{}\"".format(pattern_value))
+      a_pattern = self._create_pattern_for_type_facet(item)
+      logger.debug("-- Adding Pattern: \"{}\"".format(a_pattern.get_value()))
       type_facet.add_pattern(a_pattern)
+
+
+  def _create_pattern_for_type_facet(self, item):
+    a_pattern = nodes.Pattern()
+    a_pattern.set_value(item["@value"])
+
+    return a_pattern
 
