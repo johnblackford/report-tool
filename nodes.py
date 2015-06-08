@@ -52,12 +52,11 @@ class DataType(object):
     self.description = ""
     self.type = None
     self.list = None
-    self.size = None
-    self.instance_ref = ""
-    self.path_ref = ""
+    self.size_list = []
+    self.path_ref_list = []
     self.range_list = []
     self.enumeration_list = []
-    self.enumeration_ref = ""
+    self.enumeration_ref_list = []
     self.pattern_list = []
     self.unit_list = []
     ### TODO: We may also want an Inferred Type that is a complete definition with respect to the base
@@ -93,16 +92,53 @@ class DataType(object):
   def set_type(self, value):
     self.type = value
 
-  ### TODO: Implement the rest of the things
-  #    self.list = None
-  #    self.size = None
-  #    self.instance_ref = ""
-  #    self.path_ref = ""
-  #    self.range = None
-  #    self.enumeration_list = []
-  #    self.enumeration_ref = ""
-  #    self.pattern_list = []
-  #    self.units = ""
+  def get_list(self):
+    return self.list
+
+  def set_list(self, value):
+    self.list = value
+
+  def add_size(self, item):
+    self.size_list.append(item)
+
+  def get_sizes(self):
+    return self.size_list
+
+  def add_path_ref(self, item):
+    self.path_ref_list.append(item)
+
+  def get_path_refs(self):
+    return self.path_ref_list
+
+  def add_range(self, item):
+    self.range_list.append(item)
+
+  def get_ranges(self):
+    return self.range_list
+
+  def add_enumeration(self, item):
+    self.enumeration_list.append(item)
+
+  def get_enumerations(self):
+    return self.enumeration_list
+
+  def add_enumeration_ref(self, item):
+    self.enumeration_ref_list.append(item)
+
+  def get_enumeration_refs(self):
+    return self.enumeration_ref_list
+
+  def add_pattern(self, item):
+    self.pattern_list.append(item)
+
+  def get_patterns(self):
+    return self.pattern_list
+
+  def add_unit(self, item):
+    self.unit_list.append(item)
+
+  def get_units(self):
+    return self.unit_list
 
 
 
