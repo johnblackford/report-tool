@@ -258,6 +258,46 @@ class HexBinaryType(Type):
 
 
 
+class List(object):
+  def __init__(self):
+    self.min_items = 0
+    self.max_items = None
+    self.nested_brackets = "legacy"
+    self.description = ""
+    self.size_list = []
+
+  def get_min_items(self):
+    return self.min_items
+
+  def set_min_items(self, value):
+    self.min_items = value
+
+  def get_max_items(self):
+    return self.max_items
+
+  def set_max_items(self, value):
+    self.max_items = value
+
+  def get_nested_brackets(self):
+    return self.nested_brackets
+
+  def set_nested_brackets(self, value):
+    self.nested_brackets = value
+
+  def get_description(self):
+    return self.description
+
+  def set_description(self, value):
+    self.description = value
+
+  def add_size(self, item):
+    self.size_list.append(item)
+
+  def get_sizes(self):
+    return self.size_list
+
+
+
 class Size(object):
   def __init__(self):
     self.min_length = 0

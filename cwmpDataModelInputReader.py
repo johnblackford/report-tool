@@ -93,12 +93,13 @@ class DataModelInputReader(AbstractInputReader):
     data_type.set_status(item.get("@status", "current"))
     data_type.set_description(item.get("description", "[Description not provided]"))
 
-    ### TODO: check to see if there is a list element, then process it like a normal list
+    if "list" in item:
+      data_type.set_list(self._process_list_facet(item["list"]))
 
     # If it doesn't have a base then it has a type;
     #  If it does have a base then it shouldn't have a type, but could have other facets
     if "@base" in item:
-      logger.debug("- DataType Element is a \"{}\" type".format(data_type.get_base()))
+      logger.debug("- Element is a \"{}\" type".format(data_type.get_base()))
       self._process_data_type_facets(data_type, item)
     else:
       self._process_data_type(data_type, item)
@@ -114,7 +115,7 @@ class DataModelInputReader(AbstractInputReader):
 
     if "base64" in item:
       type_facet = nodes.Base64Type()
-      logger.debug("- DataType Element is a \"base64\" type")
+      logger.debug("- Element is a \"base64\" type")
       if item["base64"] is not None:
         if "size" in item["base64"]:
           size_facet_list = self._process_size_facets(item["string"]["size"])
@@ -122,13 +123,13 @@ class DataModelInputReader(AbstractInputReader):
             type_facet.add_size(size_facet)
     elif "boolean" in item:
       type_facet = nodes.BooleanType()
-      logger.debug("- DataType Element is a \"boolean\" type")
+      logger.debug("- Element is a \"boolean\" type")
     elif "dateTime" in item: 
       type_facet = nodes.DateTimeType() 
-      logger.debug("- DataType Element is a \"dateTime\" type")
+      logger.debug("- Element is a \"dateTime\" type")
     elif "hexBinary" in item: 
       type_facet = nodes.HexBinaryType() 
-      logger.debug("- DataType Element is a \"hexBinary\" type")
+      logger.debug("- Element is a \"hexBinary\" type")
       if item["hexBinary"] is not None:
         if "size" in item["hexBinary"]:
           size_facet_list = self._process_size_facets(item["string"]["size"])
@@ -136,7 +137,7 @@ class DataModelInputReader(AbstractInputReader):
             type_facet.add_size(size_facet)
     elif "int" in item:
       type_facet = nodes.NumericType("int")
-      logger.debug("- DataType Element is an \"int\" type")
+      logger.debug("- Element is an \"int\" type")
       if item["int"] is not None:
         if "range" in item["int"]:
           range_facet_list = self._process_range_facets(item["int"]["range"])
@@ -148,7 +149,7 @@ class DataModelInputReader(AbstractInputReader):
             type_facet.add_unit(unit_facet)
     elif "long" in item:
       type_facet = nodes.NumericType("long")
-      logger.debug("- DataType Element is a \"long\" type")
+      logger.debug("- Element is a \"long\" type")
       if item["long"] is not None:
         if "range" in item["long"]:
           range_facet_list = self._process_range_facets(item["long"]["range"])
@@ -160,7 +161,7 @@ class DataModelInputReader(AbstractInputReader):
             type_facet.add_unit(unit_facet)
     elif "string" in item:
       type_facet = nodes.StringType()
-      logger.debug("- DataType Element is a \"string\" type")
+      logger.debug("- Element is a \"string\" type")
       if item["string"] is not None:
         if "pathRef" in item["string"]:
           path_ref_facet_list = self._process_path_ref_facets(item["string"]["pathRef"])
@@ -184,7 +185,7 @@ class DataModelInputReader(AbstractInputReader):
             type_facet.add_pattern(pattern_facet)
     elif "unsignedInt" in item:
       type_facet = nodes.NumericType("unsignedInt")
-      logger.debug("- DataType Element is an \"unsignedInt\" type")
+      logger.debug("- Element is an \"unsignedInt\" type")
       if item["unsignedInt"] is not None:
         if "range" in item["unsignedInt"]:
           range_facet_list = self._process_range_facets(item["unsignedInt"]["range"])
@@ -196,7 +197,7 @@ class DataModelInputReader(AbstractInputReader):
             type_facet.add_unit(unit_facet)
     elif "unsignedLong" in item:
       type_facet = nodes.NumericType("unsignedLong")
-      logger.debug("- DataType Element is an \"unsignedLong\" type")
+      logger.debug("- Element is an \"unsignedLong\" type")
       if item["unsignedLong"] is not None:
         if "range" in item["unsignedLong"]:
           range_facet_list = self._process_range_facets(item["unsignedLong"]["range"])
@@ -248,6 +249,25 @@ class DataModelInputReader(AbstractInputReader):
       unit_facet_list = self._process_units_facets(item["units"])
       for unit_facet in unit_facet_list:
         data_type.add_unit(unit_facet)
+
+
+
+  def _process_list_facet(self, item):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    a_list = nodes.List()
+    a_list.set_min_items(item.get("@minItems", None))
+    a_list.set_max_items(item.get("@maxItems", None))
+    a_list.set_nested_brackets(item.get("@nestedBrackets", None))
+    a_list.set_description(item.get("description", ""))
+    logger.debug("- Element is a List: minItems={}, maxItems={}".format(a_list.get_min_items(), a_list.get_max_items()))
+
+    if "size" in item:
+      size_facet_list = self._process_size_facets(item["size"])
+      for size_facet in size_facet_list:
+        a_list.add(size_facet)
+
+    return a_list
 
 
 
