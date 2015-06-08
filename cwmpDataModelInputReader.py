@@ -137,22 +137,24 @@ class DataModelInputReader(AbstractInputReader):
       if item["int"] is not None:
         if "range" in item["int"]:
           self.process_ranges_for_type_facet(type_facet, item["int"]["range"])
-        ### TODO: Handle Units
+        if "units" in item["int"]:
+          self.process_units_for_type_facet(type_facet, item["int"]["units"])
     elif "long" in item:
       type_facet = nodes.NumericType("long")
       logger.debug("- DataType Element is a \"long\" type")
       if item["long"] is not None:
         if "range" in item["long"]:
           self.process_ranges_for_type_facet(type_facet, item["long"]["range"])
-        ### TODO: Handle Units
+        if "units" in item["long"]:
+          self.process_units_for_type_facet(type_facet, item["long"]["units"])
     elif "string" in item:
       type_facet = nodes.StringType()
       logger.debug("- DataType Element is a \"string\" type")
       if item["string"] is not None:
         if "pathRef" in item["string"]:
           self._process_path_refs_for_type_facet(type_facet, item["string"]["pathRef"])
-#        if "enumerationRef" in item["string"]:
-#          self._process_enum_refs_for_type_facet(type_facet, item["string"]["enumerationRef"])
+        if "enumerationRef" in item["string"]:
+          self._process_enum_refs_for_type_facet(type_facet, item["string"]["enumerationRef"])
         if "enumeration" in item["string"]:
           self._process_enumerations_for_type_facet(type_facet, item["string"]["enumeration"])
         if "size" in item["string"]:
@@ -165,14 +167,16 @@ class DataModelInputReader(AbstractInputReader):
       if item["unsignedInt"] is not None:
         if "range" in item["unsignedInt"]:
           self.process_ranges_for_type_facet(type_facet, item["unsignedInt"]["range"])
-        ### TODO: Handle Units
+        if "units" in item["unsignedInt"]:
+          self.process_units_for_type_facet(type_facet, item["unsignedInt"]["units"])
     elif "unsignedLong" in item:
       type_facet = nodes.NumericType("unsignedLong")
       logger.debug("- DataType Element is an \"unsignedLong\" type")
       if item["unsignedLong"] is not None:
         if "range" in item["unsignedLong"]:
           self.process_ranges_for_type_facet(type_facet, item["unsignedLong"]["range"])
-        ### TODO: Handle Units
+        if "units" in item["unsignedLong"]:
+          self.process_units_for_type_facet(type_facet, item["unsignedLong"]["units"])
     else:
       logger.error("Type Facet expected and not found")
 
@@ -183,7 +187,7 @@ class DataModelInputReader(AbstractInputReader):
   def _process_sizes_for_type_facet(self, type_facet, item):
     logger = logging.getLogger(self.__class__.__name__)
 
-    # NOTE: If there are multiple patters then it will be wrapped in a list, otherwise it won't
+    # NOTE: If there are multiple patters then they will be wrapped in a list, otherwise it won't
     if isinstance(item, list):
       for list_item in item:
         a_size = self._create_size_for_type_facet(list_item)
@@ -199,9 +203,13 @@ class DataModelInputReader(AbstractInputReader):
     a_size = nodes.Size()
     a_size.set_min_length(item.get("@minLength", None))
     a_size.set_max_length(item.get("@maxLength", None))
+    if "description" in item:
+      a_size.set_description(item["description"])
 
     return a_size
 
+
+  ### NOTE: instanceRef is not implemented as I don't believe that it is used
   
 
   def _process_path_refs_for_type_facet(self, type_facet, item):
@@ -226,6 +234,8 @@ class DataModelInputReader(AbstractInputReader):
     a_path_ref.set_target_parent_scope(item.get("@targetParentScope", ""))
     a_path_ref.set_target_type(item.get("@targetType", ""))
     a_path_ref.set_target_data_type(item.get("@targetDataType", ""))
+    if "description" in item:
+      a_path_ref.set_description(item["description"])
 
     return a_path_ref
 
@@ -234,7 +244,7 @@ class DataModelInputReader(AbstractInputReader):
   def _process_ranges_for_type_facet(self, type_facet, item):
     logger = logging.getLogger(self.__class__.__name__)
 
-    # NOTE: If there are multiple patters then it will be wrapped in a list, otherwise it won't
+    # NOTE: If there are multiple patters then they will be wrapped in a list, otherwise it won't
     if isinstance(item, list):
       for list_item in item:
         a_range = self._create_range_for_type_facet(list_item)
@@ -253,8 +263,88 @@ class DataModelInputReader(AbstractInputReader):
     a_range.set_step(item.get("@step", 1))
     a_range.set_min_inclusive(item.get("@minInclusive", None))
     a_range.set_max_inclusive(item.get("@maxInclusive", None))
+    if "description" in item:
+      a_range.set_description(item["description"])
 
     return a_range
+
+
+
+  def _process_enumerations_for_type_facet(self, type_facet, item):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    # NOTE: If there are multiple instances then they will be wrapped in a list, otherwise it won't
+    if isinstance(item, list):
+      for list_item in item:
+        an_enum = self._create_enumeration_for_type_facet(list_item)
+        logger.debug("-- Adding Enumeration: \"{}\"".format(an_enum.get_value()))
+        type_facet.add_enumeration(an_enum)
+    else:
+      an_enum = self._create_enumeration_for_type_facet(item)
+      logger.debug("-- Adding Enumeration: \"{}\"".format(an_enum.get_value()))
+      type_facet.add_enumeration(an_enum)
+
+
+  def _create_enumeration_for_type_facet(self, item):
+    an_enum = nodes.Enumeration()
+    an_enum.set_value(item["@value"])
+    an_enum.set_code(item.get("@code", None))
+    if "description" in item:
+      an_enum.set_description(item["description"])
+
+    return an_enum
+
+
+
+  def _process_enumeration_refs_for_type_facet(self, type_facet, item):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    # NOTE: If there are multiple instances then they will be wrapped in a list, otherwise it won't
+    if isinstance(item, list):
+      for list_item in item:
+        an_enum_ref = self._create_enumeration_ref_for_type_facet(list_item)
+        logger.debug("-- Adding Pattern: \"{}\"".format(an_enum_ref.target_param()))
+        type_facet.add_enumeration_ref(an_enum_ref)
+    else:
+      an_enum_ref = self._create_enumeration_ref_for_type_facet(item)
+      logger.debug("-- Adding Pattern: \"{}\"".format(an_enum_ref.target_param()))
+      type_facet.add_enumeration_ref(an_enum_ref)
+
+
+  def _create_enumeration_ref_for_type_facet(self, item):
+    an_enum_ref = nodes.EnumerationRef()
+    an_enum_ref.set_target_param(item["@targetParam"])
+    an_enum_ref.set_target_param_scope(item.get("@targetParamScope", ""))
+    an_enum_ref.set_null_value(item.get("@nullValue", ""))
+    if "description" in item:
+      an_enum_ref.set_description(item["description"])
+
+    return an_enum_ref
+
+
+
+  def _process_units_for_type_facet(self, type_facet, item):
+    logger = logging.getLogger(self.__class__.__name__)
+
+    # NOTE: If there are multiple instances then they will be wrapped in a list, otherwise it won't
+    if isinstance(item, list):
+      for list_item in item:
+        a_unit = self._create_unit_for_type_facet(list_item)
+        logger.debug("-- Adding Pattern: \"{}\"".format(a_unit.get_value()))
+        type_facet.add_unit(a_unit)
+    else:
+      a_unit = self._create_unit_for_type_facet(item)
+      logger.debug("-- Adding Pattern: \"{}\"".format(a_unit.get_value()))
+      type_facet.add_unit(a_unit)
+
+
+  def _create_unit_for_type_facet(self, item):
+    a_unit = nodes.Unit()
+    a_unit.set_value(item["@value"])
+    if "description" in item:
+      a_unit.set_description(item["description"])
+
+    return a_unit
 
 
 
@@ -276,6 +366,8 @@ class DataModelInputReader(AbstractInputReader):
   def _create_pattern_for_type_facet(self, item):
     a_pattern = nodes.Pattern()
     a_pattern.set_value(item["@value"])
+    if "description" in item:
+      a_pattern.set_description(item["description"])
 
     return a_pattern
 

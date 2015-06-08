@@ -109,17 +109,10 @@ class DataType(object):
 class Type(object):
   def __init__(self, name_value):
     self.name = name_value
-#    self.value = None
 
 
   def get_name(self):
     return self.name
-#
-#  def get_value(self):
-#    return self.value
-#
-#  def set_value(self, a_value):
-#    self.value = a_value
 
 
 
@@ -162,6 +155,7 @@ class StringType(Type):
 
   def get_patterns(self):
     return self.patter_list
+
 
 
 class NumericType(Type):
@@ -232,6 +226,8 @@ class Size(object):
   def __init__(self):
     self.min_length = 0
     self.max_length = None
+    self.description = ""
+
 
   def get_min_length(self):
     return self.min_length
@@ -245,70 +241,12 @@ class Size(object):
   def set_max_length(self, value):
     self.max_length = value
 
-
-
-class Range(object):
-  def __init__(self):
-    self.min_inclusive = None
-    self.max_inclusive = None
-    self.step = 1
-
-
-  def get_min_inclusive(self):
-    return self.min_inclusive
-
-  def set_min_inclusive(self, value):
-    self.min_inclusive = value
-
-  def get_max_inclusive(self):
-    return self.max_inclusive
-
-  def set_max_inclusive(self, value):
-    self.max_inclusive = value
-
-  def get_step(self):
-    return self.step
-
-  def set_Step(self, value):
-    self.step = value
-
-
-class Enumeration(object):
-  def __init__(self):
-    self.value = ""
-    self.code = None
-    self.description = ""
-
-
-  def get_value(self):
-    return self.value
-
-  def set_value(self, a_value):
-    self.value = a_value
-
-  def get_code(self):
-    return self.code
-
-  def set_code(self, value):
-    self.code = value
-
   def get_description(self):
     return self.description
 
   def set_description(self, value):
     self.description = value
 
-
-class Pattern(object):
-  def __init__(self):
-    self.value = ""
-
-
-  def get_value(self):
-    return self.value
-
-  def set_value(self, a_value):
-    self.value = a_value
 
 
 class PathRef(object):
@@ -318,6 +256,7 @@ class PathRef(object):
     self.target_parent_scope = ""
     self.target_type = ""
     self.target_data_type = ""
+    self.description = ""
 
 
   def get_ref_type(self):
@@ -349,3 +288,144 @@ class PathRef(object):
 
   def set_target_data_type(self, value):
     self.target_data_type = value
+
+  def get_description(self):
+    return self.description
+
+  def set_description(self, value):
+    self.description = value
+
+
+
+class Range(object):
+  def __init__(self):
+    self.min_inclusive = None
+    self.max_inclusive = None
+    self.step = 1
+    self.description = ""
+
+
+  def get_min_inclusive(self):
+    return self.min_inclusive
+
+  def set_min_inclusive(self, value):
+    self.min_inclusive = value
+
+  def get_max_inclusive(self):
+    return self.max_inclusive
+
+  def set_max_inclusive(self, value):
+    self.max_inclusive = value
+
+  def get_step(self):
+    return self.step
+
+  def set_Step(self, value):
+    self.step = value
+
+  def get_description(self):
+    return self.description
+
+  def set_description(self, value):
+    self.description = value
+
+
+
+class Enumeration(object):
+  def __init__(self):
+    self.value = ""
+    self.code = None
+    self.description = ""
+
+
+  def get_value(self):
+    return self.value
+
+  def set_value(self, a_value):
+    self.value = a_value
+
+  def get_code(self):
+    return self.code
+
+  def set_code(self, value):
+    self.code = value
+
+  def get_description(self):
+    return self.description
+
+  def set_description(self, value):
+    self.description = value
+
+
+
+class EnumerationRef(object):
+  def __init__(self):
+    self.target_param = ""
+    self.target_param_scope = ""
+    self.null_value = ""
+    self.description = ""
+
+
+  def get_target_param(self):
+    return self.target_param
+
+  def set_target_param(self, value):
+    self.target_param = value
+
+  def get_target_param_scope(self):
+    return self.target_param_scope
+
+  def set_target_param_scope(self, value):
+    self.target_param_scope = value
+
+  def get_null_value(self):
+    return self.null_value
+
+  def set_null_value(self, value):
+    self.null_value = value
+
+  def get_description(self):
+    return self.description
+
+  def set_description(self, value):
+    self.description = value
+
+
+
+class Pattern(object):
+  def __init__(self):
+    self.value = ""
+    self.description = ""
+
+
+  def get_value(self):
+    return self.value
+
+  def set_value(self, a_value):
+    self.value = a_value
+
+  def get_description(self):
+    return self.description
+
+  def set_description(self, value):
+    self.description = value
+
+
+
+class Unit(object):
+  def __init__(self):
+    self.value = ""
+    self.description = ""
+
+
+  def get_value(self):
+    return self.value
+
+  def set_value(self, a_value):
+    self.value = a_value
+
+  def get_description(self):
+    return self.description
+
+  def set_description(self, value):
+    self.description = value
