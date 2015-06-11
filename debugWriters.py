@@ -10,7 +10,6 @@
 ##
 """
 
-import nodes
 import logging
 import cStringIO
 
@@ -21,16 +20,19 @@ class TextOutputWriter(AbstractOutputWriter):
     """Debug Text Output Writer"""
 
     def __init__(self):
+        """Initialize internal variables"""
         self.doc = None
         self.one_line_output = False
 
 
 
     def get_output_format(self):
+        """Return the appropriate output format"""
         return "text"
 
 
     def process_properties(self, props):
+        """Retrieve the OneLine property"""
         logger = logging.getLogger(self.__class__.__name__)
         self.one_line_output = props.get("OneLine", False)
         logger.info("One Line Output Property now set to: {}".format(self.one_line_output))
@@ -38,9 +40,8 @@ class TextOutputWriter(AbstractOutputWriter):
 
 
     def write(self, doc, filename):
-        console = False
+        """Write the output as configured"""
         output_buffer = cStringIO.StringIO()
-        logger = logging.getLogger(self.__class__.__name__)
 
         if self.one_line_output:
             self._generate_one_line_content(doc, output_buffer)
@@ -57,21 +58,25 @@ class TextOutputWriter(AbstractOutputWriter):
 
 
     def _generate_one_line_content(self, doc, out_buffer):
-        logger = logging.getLogger(self.__class__.__name__)
-
+        """Internal method to generate 1-Line output content to an output buffer"""
         trunc_desc = doc.get_description().split("\n")[0]
-        out_buffer.write("Document [spec={}], [file={}]: {}\n".format(doc.get_spec(), doc.get_file(), trunc_desc))
+        out_buffer.write(
+            "Document [spec={}], [file={}]: {}\n"
+            .format(doc.get_spec(), doc.get_file(), trunc_desc))
         for data_type in doc.get_data_types():
             if len(data_type.get_base()) == 0:
-                out_buffer.write("- DataType [name={}]: {}\n".format(data_type.get_name(), data_type.get_type().get_name()))
+                out_buffer.write(
+                    "- DataType [name={}]: {}\n"
+                    .format(data_type.get_name(), data_type.get_type().get_name()))
             else:
-                ### TODO: Probably temporary, but if it hsa a base then it doesn't have a type
-                out_buffer.write("- DataType [name={}], [base={}]\n".format(data_type.get_name(), data_type.get_base()))
+                ### If it has a base then it doesn't have a type
+                out_buffer.write(
+                    "- DataType [name={}], [base={}]\n"
+                    .format(data_type.get_name(), data_type.get_base()))
 
 
     def _generate_content(self, doc, out_buffer):
-        logger = logging.getLogger(self.__class__.__name__)
-
+        """Internal method to geneate verbose output content to an output buffer"""
         out_buffer.write("Document Spec: {}\n".format(doc.get_spec()))
         out_buffer.write("Document File: {}\n".format(doc.get_file()))
 
@@ -81,6 +86,7 @@ class TextOutputWriter(AbstractOutputWriter):
 
 
     def _write_to_console(self, out_buffer):
+        """Internal method to generate verbose output content to the console"""
         logger = logging.getLogger(self.__class__.__name__)
         logger.info("Writing to the console")
         print out_buffer.getvalue()
@@ -88,6 +94,7 @@ class TextOutputWriter(AbstractOutputWriter):
 
 
     def _write_to_file(self, out_buffer, filename):
+        """Internal method to write the output buffer to the output file"""
         logger = logging.getLogger(self.__class__.__name__)
 
         # Open the File for writing
