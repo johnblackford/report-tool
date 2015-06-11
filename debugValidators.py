@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 
 ## 
-## File Name: cwmpDataModelInputReader.py
+## File Name: debug_validators.py
 ##
-## Description: CWMP-DM XML Input Reader
+## Description: A set of Debug Validators
 ## 
 ## Functionality:
-##  - Input Reader for CWMP-DM XML Format
+##  - Deubug Validator for checking the Document Element has a Description
 ## 
 
 
