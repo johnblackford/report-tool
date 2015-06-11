@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 
-## 
+"""
 ## File Name: debugWriters.py
 ##
 ## Description: Debug Text Output Writer
-## 
+##
 ## Functionality:
-##  - Output Writer for the Debug Text Format
-## 
+##	- Output Writer for the Debug Text Format
+##
+"""
 
 import nodes
 import logging
@@ -17,81 +18,81 @@ from abstract_classes import AbstractOutputWriter
 
 
 class TextOutputWriter(AbstractOutputWriter):
-  """Debug Text Output Writer"""
+	"""Debug Text Output Writer"""
 
-  def __init__(self):
-    self.doc = None
-    self.one_line_output = False
-
-
-
-  def get_output_format(self):
-    return "text"
-
-
-  def process_properties(self, props):
-    logger = logging.getLogger(self.__class__.__name__)
-    self.one_line_output = props.get("OneLine", False)
-    logger.info("One Line Output Property now set to: {}".format(self.one_line_output))
+	def __init__(self):
+		self.doc = None
+		self.one_line_output = False
 
 
 
-  def write(self, doc, filename):
-    console = False
-    output_buffer = cStringIO.StringIO()
-    logger = logging.getLogger(self.__class__.__name__)
+	def get_output_format(self):
+		return "text"
 
-    if self.one_line_output:
-      self._generate_one_line_content(doc, output_buffer)
-    else:
-      self._generate_content(doc, output_buffer)
 
-    if len(filename) == 0:
-      self._write_to_console(output_buffer)
-    else:
-      self._write_to_file(output_buffer, filename)
-
-    output_buffer.close()
+	def process_properties(self, props):
+		logger = logging.getLogger(self.__class__.__name__)
+		self.one_line_output = props.get("OneLine", False)
+		logger.info("One Line Output Property now set to: {}".format(self.one_line_output))
 
 
 
-  def _generate_one_line_content(self, doc, out_buffer):
-    logger = logging.getLogger(self.__class__.__name__)
+	def write(self, doc, filename):
+		console = False
+		output_buffer = cStringIO.StringIO()
+		logger = logging.getLogger(self.__class__.__name__)
 
-    trunc_desc = doc.get_description().split("\n")[0]
-    out_buffer.write("Document [spec={}], [file={}]: {}\n".format(doc.get_spec(), doc.get_file(), trunc_desc))
-    for data_type in doc.get_data_types():
-      if len(data_type.get_base()) == 0:
-        out_buffer.write("- DataType [name={}]: {}\n".format(data_type.get_name(), data_type.get_type().get_name()))
-      else:
-        ### TODO: Probably temporary, but if it hsa a base then it doesn't have a type
-        out_buffer.write("- DataType [name={}], [base={}]\n".format(data_type.get_name(), data_type.get_base()))
+		if self.one_line_output:
+			self._generate_one_line_content(doc, output_buffer)
+		else:
+			self._generate_content(doc, output_buffer)
 
+		if len(filename) == 0:
+			self._write_to_console(output_buffer)
+		else:
+			self._write_to_file(output_buffer, filename)
 
-  def _generate_content(self, doc, out_buffer):
-    logger = logging.getLogger(self.__class__.__name__)
-
-    out_buffer.write("Document Spec: {}\n".format(doc.get_spec()))
-    out_buffer.write("Document File: {}\n".format(doc.get_file()))
-
-    out_buffer.write("Document Description:\n")
-    out_buffer.write("{}\n".format(doc.get_description()))
+		output_buffer.close()
 
 
 
-  def _write_to_console(self, out_buffer):
-    logger = logging.getLogger(self.__class__.__name__)
-    logger.info("Writing to the console")
-    print out_buffer.getvalue()
+	def _generate_one_line_content(self, doc, out_buffer):
+		logger = logging.getLogger(self.__class__.__name__)
+
+		trunc_desc = doc.get_description().split("\n")[0]
+		out_buffer.write("Document [spec={}], [file={}]: {}\n".format(doc.get_spec(), doc.get_file(), trunc_desc))
+		for data_type in doc.get_data_types():
+			if len(data_type.get_base()) == 0:
+				out_buffer.write("- DataType [name={}]: {}\n".format(data_type.get_name(), data_type.get_type().get_name()))
+			else:
+				### TODO: Probably temporary, but if it hsa a base then it doesn't have a type
+				out_buffer.write("- DataType [name={}], [base={}]\n".format(data_type.get_name(), data_type.get_base()))
+
+
+	def _generate_content(self, doc, out_buffer):
+		logger = logging.getLogger(self.__class__.__name__)
+
+		out_buffer.write("Document Spec: {}\n".format(doc.get_spec()))
+		out_buffer.write("Document File: {}\n".format(doc.get_file()))
+
+		out_buffer.write("Document Description:\n")
+		out_buffer.write("{}\n".format(doc.get_description()))
 
 
 
-  def _write_to_file(self, out_buffer, filename):
-    logger = logging.getLogger(self.__class__.__name__)
+	def _write_to_console(self, out_buffer):
+		logger = logging.getLogger(self.__class__.__name__)
+		logger.info("Writing to the console")
+		print out_buffer.getvalue()
 
-    # Open the File for writing
-    with open(filename, "w") as out_file:
-      logger.info("Writing to the file: {}".format(filename))
-      out_file.write(out_buffer.getvalue())
-      logger.info("Finished writing the output file")
+
+
+	def _write_to_file(self, out_buffer, filename):
+		logger = logging.getLogger(self.__class__.__name__)
+
+		# Open the File for writing
+		with open(filename, "w") as out_file:
+			logger.info("Writing to the file: {}".format(filename))
+			out_file.write(out_buffer.getvalue())
+			logger.info("Finished writing the output file")
 
