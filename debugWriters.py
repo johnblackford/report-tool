@@ -13,7 +13,7 @@ import nodes
 import logging
 import cStringIO
 
-from abstractIOHandlers import AbstractOutputWriter
+from abstract_classes import AbstractOutputWriter
 
 
 class TextOutputWriter(AbstractOutputWriter):

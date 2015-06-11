@@ -14,7 +14,7 @@ import nodes
 import logging
 import xmltodict
 
-from abstractIOHandlers import AbstractInputReader
+from abstract_classes import AbstractInputReader
 
 
 
