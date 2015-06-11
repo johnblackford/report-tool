@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 """
-## File Name: debugWriters.py
+## File Name: debug_writers.py
 ##
 ## Description: Debug Text Output Writer
 ##
