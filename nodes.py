@@ -396,7 +396,7 @@ class Range(object):
   def get_step(self):
     return self.step
 
-  def set_Step(self, value):
+  def set_step(self, value):
     self.step = value
 
   def get_description(self):
