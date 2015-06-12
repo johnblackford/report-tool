@@ -80,8 +80,9 @@ class DataModelInputReader(AbstractInputReader):
         print ""
         if "bibliography" in xml_dict["dm:document"]:
             for biblio_ref_item in xml_dict["dm:document"]["bibliography"]["reference"]:
-                print biblio_ref_item.keys()
+                self.doc.add_biblio_ref(self._process_biblio_ref(biblio_ref_item))
 
+        ### TODO: Work on the Model next
         print ""
         print xml_dict["dm:document"]["model"]["@name"]
 
@@ -521,4 +522,30 @@ class DataModelInputReader(AbstractInputReader):
             a_unit.set_description(item["description"])
 
         return a_unit
+
+
+
+    def _process_biblio_ref(self, item):
+        """Internal method to process the Reference Elements within a Bibliography element"""
+        a_ref = nodes.Reference()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        a_ref.set_name(item["name"])
+        a_ref.set_title(item.get("title", ""))
+        a_ref.set_organization(item.get("organization", ""))
+        a_ref.set_category(item.get("category", ""))
+        a_ref.set_date(item.get("date", ""))
+
+        if "hyperlink" in item:
+            if isinstance(item["hyperlink"], list):
+                for hyperlink_item in item["hyperlink"]:
+                    a_ref.add_hyperlink(hyperlink_item)
+                    logger.debug("- Adding Hyperlink: \"{}\"".format(hyperlink_item))
+            else:
+                a_ref.add_hyperlink(item["hyperlink"])
+                logger.debug("- Adding Hyperlink: \"{}\"".format(item["hyperlink"]))
+
+        logger.debug("Processing Bibliography Reference: \"{}\"".format(a_ref.get_name()))
+
+        return a_ref
 
