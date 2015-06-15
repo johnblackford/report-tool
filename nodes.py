@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 
-## 
+"""
 ## File Name: nodes.py
 ##
 ## Description: Objects for the Node Tree
-## 
+##
 ## Functionality:
 ##  - Document Node (just a description for now)
-## 
+##
+"""
 
 
 class Document(object):
@@ -245,7 +246,7 @@ class StringType(Type):
         self.pattern_list.append(item)
 
     def get_patterns(self):
-        return self.patter_list
+        return self.pattern_list
 
 
 
@@ -258,7 +259,7 @@ class NumericType(Type):
 
 
     def add_unit(self, item):
-        self.unit_list.appen(item)
+        self.unit_list.append(item)
 
     def get_units(self):
         return self.unit_list
@@ -267,7 +268,7 @@ class NumericType(Type):
         self.range_list.append(item)
 
     def get_ranges(self):
-        return self.range
+        return self.range_list
 
 
 
@@ -313,7 +314,7 @@ class HexBinaryType(Type):
 
 
 
-class FaceType(object):
+class FacetType(object):
     def __init__(self):
         self.description = ""
 
@@ -326,8 +327,9 @@ class FaceType(object):
 
 
 
-class List(FaceType):
+class List(FacetType):
     def __init__(self):
+        super(List, self).__init__()
         self.min_items = 0
         self.max_items = None
         self.nested_brackets = "legacy"
@@ -360,8 +362,9 @@ class List(FaceType):
 
 
 
-class Size(FaceType):
+class Size(FacetType):
     def __init__(self):
+        super(Size, self).__init__()
         self.min_length = 0
         self.max_length = None
 
@@ -380,8 +383,9 @@ class Size(FaceType):
 
 
 
-class PathRef(FaceType):
+class PathRef(FacetType):
     def __init__(self):
+        super(PathRef, self).__init__()
         self.ref_type = ""
         self.target_parent = ""
         self.target_parent_scope = ""
@@ -421,8 +425,9 @@ class PathRef(FaceType):
 
 
 
-class Range(FaceType):
+class Range(FacetType):
     def __init__(self):
+        super(Range, self).__init__()
         self.min_inclusive = None
         self.max_inclusive = None
         self.step = 1
@@ -448,8 +453,9 @@ class Range(FaceType):
 
 
 
-class Enumeration(FaceType):
+class Enumeration(FacetType):
     def __init__(self):
+        super(Enumeration, self).__init__()
         self.value = ""
         self.code = None
 
@@ -468,8 +474,9 @@ class Enumeration(FaceType):
 
 
 
-class EnumerationRef(FaceType):
+class EnumerationRef(FacetType):
     def __init__(self):
+        super(EnumerationRef, self).__init__()
         self.target_param = ""
         self.target_param_scope = ""
         self.null_value = ""
@@ -495,8 +502,9 @@ class EnumerationRef(FaceType):
 
 
 
-class Pattern(FaceType):
+class Pattern(FacetType):
     def __init__(self):
+        super(Pattern, self).__init__()
         self.value = ""
 
 
@@ -508,8 +516,9 @@ class Pattern(FaceType):
 
 
 
-class Unit(FaceType):
+class Unit(FacetType):
     def __init__(self):
+        super(Unit, self).__init__()
         self.value = ""
 
 
