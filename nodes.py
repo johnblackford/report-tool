@@ -19,6 +19,7 @@ class Document(object):
         self.file_name = ""
         self.description = ""
         self.data_type_list = []
+        self.data_type_dict = {}
         self.biblio_ref_list = []
         # Eventually need to add in support for Components, but not now as we
         #  are just supporting Full CWMP-DM XML Files
@@ -47,10 +48,21 @@ class Document(object):
         self.description = value
 
     def add_data_type(self, item):
+        """Add a DataType to the Document"""
         self.data_type_list.append(item)
+        self.data_type_dict[item.get_name()] = item
 
     def get_data_types(self):
+        """Retrieve the list of DataType instances"""
         return self.data_type_list
+
+    def has_data_type(self, name):
+        """Check to see if the requested DataType is present"""
+        return name in self.data_type_dict
+
+    def get_data_type(self, name):
+        """Retrieve the requested DataType"""
+        return self.data_type_dict[name]
 
     def add_biblio_ref(self, item):
         self.biblio_ref_list.append(item)
@@ -220,8 +232,11 @@ class Model(object):
         self.description = ""
         # A Model also can have Components - FUTURE
         self.model_parameter_list = []
+        self.model_parameter_dict = {}
         self.model_object_list = []
+        self.model_object_dict = {}
         self.profile_list = []
+        self.profile_dict = {}
 
 
     def get_name(self):
@@ -260,38 +275,77 @@ class Model(object):
         """Add a Parameter to the Model"""
         self.model_parameter_list.append(item)
 
+        # If the Parameter Element is based on a previously defined Parameter
+        #  then the @base attribute will be populated instead of the @name,
+        #  but there won't be a conflict in this Model as it is defined in
+        #  another Model instance
+        if item.get_name() is not None:
+            self.model_parameter_dict[item.get_name()] = item
+        else:
+            self.model_parameter_dict[item.get_base()] = item
+
     def get_model_parameters(self):
         """Retrieve the Model's Parameters
            - only Parameters that are directly on the Model,
              not the ones that are on the Objects"""
         return self.model_parameter_list
 
+    def has_model_parameter(self, name):
+        """Check to see if the requested Model's Parameter is present"""
+        return name in self.model_parameter_dict
+
+    def get_model_parameter(self, name):
+        """Retrieve the requested Model's Parameter List"""
+        return self.model_parameter_dict[name]
+
     def add_model_object(self, item):
         """Add an Object to the Model"""
         self.model_object_list.append(item)
 
+        # If the Object Element is based on a previously defined Object
+        #  then the @base attribute will be populated instead of the @name,
+        #  but there won't be a conflict in this Model as the @name Object
+        #  is defined in another Model instance
+        if item.get_name() is not None:
+            self.model_object_dict[item.get_name()] = item
+        else:
+            self.model_object_dict[item.get_base()] = item
+
     def get_model_objects(self):
-        """Retrieve the Model's Objects"""
+        """Retrieve the Model's Object List"""
         return self.model_object_list
+
+    def has_model_object(self, name):
+        """Check to see if the requested Model's Object is present"""
+        return name in self.model_object_dict
+
+    def get_model_object(self, name):
+        """Retrieve the requested Model's Object"""
+        return self.model_object_dict[name]
 
     def add_profile(self, item):
         """Add a Profile to the Model"""
         self.profile_list.append(item)
+        self.profile_dict[item.get_name()] = item
 
     def get_profiles(self):
         """Retrieve the Model's Profiles"""
         return self.profile_list
+
+    def has_profile(self, name):
+        """Check to see if the requested Profile is present"""
+        return name in self.profile_dict
+
+    def get_profile(self, name):
+        """Retrieve the requested Profile"""
+        return self.profile_dict[name]
 
 
 
 class ModelObject(object):
     """Represents an Object Element"""
     # attributes: name, base, access, min_entries, max_entries, num_entries_parameter, enable_parameter
-    # sub-elements: description, unique_key(object), component_list, parameter_list
-    #  Probably want the Model to support a get_model_object(self, name) where it is keeping a dictionary of Object instances and a list
-    #   The add_model_object could populate the dictionary
-    #  Probably want the Model to support a get_model_parameter(self, name) where it is keeping a dictionary of Parameter instances and a list
-    #   The add_model_parameter could populate the dictionary
+    # sub-elements: description, list of unique_key(@functional=true, parameter_ref_list), component_list(Component - FUTURE), parameter_list(ModelParameter)
     #  Probably want the Object to support a get_model_parameter(self, name) where it is keeping a dictionary of Parameter instances and a list
     #   The add_model_parameter could populate the dictionary
 
@@ -300,9 +354,14 @@ class ModelObject(object):
 class ModelParameter(object):
     """Represents a Parameter Element"""
     # attributes: name, base, access, active_notify=normal, forced_inform=false
-    # sub-elements: description, list, type | data_type_ref(@ref), default(description, @type, @value)
-    #  For the data_type_ref, we probably want Document to support a get_data_type(self, name) where it is keeping a dictionary of DataType instances and a list
-    #   The add_data_type could populate the dictionary
+    # sub-elements: description, list, syntax(@hidden, @command, ListFacet, Type | reference to DataType(@ref)), DefaultFacet(description, @type, @value)
+
+
+
+class Profile(object):
+    """Represents a Profile Element"""
+    # attributes: name, base, extends, min_version
+    # sub-elements: description, list of profile_parameter(description, @ref, @requirement), list of profile_object(@ref, @requirement, description, profile_parameter_list)
 
 
 
