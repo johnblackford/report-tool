@@ -61,7 +61,7 @@ class TextOutputWriter(AbstractOutputWriter):
         """Internal method to generate 1-Line output content to an output buffer"""
         trunc_desc = doc.get_description().split("\n")[0]
         out_buffer.write(
-            "Document [spec={}], [file={}]: {}\n"
+            "\nDocument [spec={}], [file={}]: {}\n"
             .format(doc.get_spec(), doc.get_file(), trunc_desc))
         for data_type in doc.get_data_types():
             if len(data_type.get_base()) == 0:
@@ -77,6 +77,7 @@ class TextOutputWriter(AbstractOutputWriter):
 
     def _generate_content(self, doc, out_buffer):
         """Internal method to geneate verbose output content to an output buffer"""
+        out_buffer.write("\n")
         out_buffer.write("Document Spec: {}\n".format(doc.get_spec()))
         out_buffer.write("Document File: {}\n".format(doc.get_file()))
 
