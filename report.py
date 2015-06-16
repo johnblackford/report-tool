@@ -1,24 +1,22 @@
 #! /usr/bin/env python
 
 """
-## File Name: report.py
-##
-## Description: Baseline Report Tool for BBHome
-##
-## Functionality:
-##  - Input Readers Supported: CWMP-DM XML
-##  - Output Writers Supported: Debug Text
-##
-
-# High Level Design Concepts
-# Input Readers : CWMP-DM XML Reader, CWMP-DT XML Reader, YIN Reader, YANG Reader
-#  Readers need to accept a file and convert the contents into objects:
-#    Document, Component, Model, Object, Parameter, Profile
-# Output Writers : Text Debug Writer, CWMP-DM HTML Writer, CWMP-DT XML Writer, CWMP-DT HTML Writer
-#  Writers need to accept a Document and write the contents to the intended format
-# Objects should be structured as a "node tree"
-#  (Model would have a list of Parameters and a list of Objects and a list of Profiles;
-#    Object would have a list of Parameters and a list of Objects etc).
+# File Name: report.py
+#
+# Description: Baseline Report Tool for BBHome
+#
+# Functionality:
+#  - Input Readers Supported: Full CWMP-DM XML
+#  - Output Writers Supported: Debug Text
+#
+#
+# New Idea: ID-106 test tool
+#  Use an Input Reader to get the CWMP-DM File
+#  Maybe use an Input Reader to get the CPE provided CMWP-DT File?
+#  CWMP (HTTP) to call GPNs and GPVs to validate the implemented data model
+#   - could this be a "Validator"?
+#   - or would we want a new tool that re-uses these ideas
+#
 """
 
 

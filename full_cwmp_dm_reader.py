@@ -1,13 +1,15 @@
 #! /usr/bin/env python
 
 """
-## File Name: cwmp_dm_ir.py
-##
-## Description: CWMP-DM XML Input Reader
-##
-## Functionality:
-##  - Input Reader for CWMP-DM XML Format
-##
+# File Name: full_cwmp_dm_reader.py
+#
+# Description: Full CWMP-DM XML Input Reader
+#
+# Functionality:
+#  - Input Reader for Full CWMP-DM XML Files
+#     This simplifies the implementation as it doesn't have to worry
+#     about Import statements or Component Elements
+#
 """
 
 
