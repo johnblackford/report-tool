@@ -73,7 +73,7 @@ class DataModelInputReader(AbstractInputReader):
         self.doc.set_description(
             xml_dict["dm:document"].get("description", "[Description not provided]"))
 
-        ### TODO: Handle Imports
+        # There are no Imports in a Full CWMP-DM XML File, so no need to process them
 
         # Process dataType elements in the document
         for data_type_item in xml_dict["dm:document"]["dataType"]:
@@ -83,9 +83,40 @@ class DataModelInputReader(AbstractInputReader):
             for biblio_ref_item in xml_dict["dm:document"]["bibliography"]["reference"]:
                 self.doc.add_biblio_ref(self._process_biblio_ref(biblio_ref_item))
 
-        ### TODO: Work on the Model next
-        print ""
-        print xml_dict["dm:document"]["model"]["@name"]
+        # There are no Components in a Full CWMP-DM XML File, so no need to process them
+
+        # There are no Parameters associated with the Model in a Full CWMP-DM XML File,
+        #   so no need to look for them
+
+        # There is only ever a single Object associated with the Model in a Full CWMP-DM XML File,
+        #   and it is the Root Data Model Object (Device:2.9, Device:1.7, etc.) - so no need to look
+        #   for more than that
+        data_model_type = "Root"
+        root_data_model = self.doc.get_model()
+        model_item = xml_dict["dm:document"]["model"]
+
+        # Process the Model's Attributes
+        root_data_model.set_name(model_item["@name"])
+
+        if "@base" in model_item:
+            root_data_model.set_base(model_item["@base"])
+
+        if "@isService" in model_item:
+            data_model_type = "Service"
+            root_data_model.set_is_service(model_item["@isService"])
+
+        # Process the Model's Description (if it is present)
+        if "description" in model_item:
+            root_data_model.set_description(model_item["description"])
+
+        logger.debug("Processing {} {} Data Model".format(root_data_model.get_name(), data_model_type))
+
+        # There won't be any Parameters associated with the Model in a Full CWMP-DM XML
+
+        # Process the Model's Objects
+        for object_item in model_item["object"]:
+            print object_item["@name"]
+#            root_data_model.add_model_object(self._process_object_element(object_item))
 
         return self.doc
 
@@ -99,9 +130,13 @@ class DataModelInputReader(AbstractInputReader):
         data_type.set_name(item["@name"])
         logger.debug("Processing DataType Element [{}]".format(item["@name"]))
 
-        data_type.set_base(item.get("@base", ""))
-        data_type.set_status(item.get("@status", "current"))
-        data_type.set_description(item.get("description", "[Description not provided]"))
+        if "@base" in item:
+            data_type.set_base(item["@base"])
+
+        if "@status" in item:
+            data_type.set_status(item["@status"])
+
+        data_type.set_description(item.get("description", ""))
 
         if "list" in item:
             data_type.set_list(self._process_list_facet(item["list"]))

@@ -64,7 +64,7 @@ class TextOutputWriter(AbstractOutputWriter):
             "\nDocument [spec={}], [file={}]: {}\n"
             .format(doc.get_spec(), doc.get_file(), trunc_desc))
         for data_type in doc.get_data_types():
-            if len(data_type.get_base()) == 0:
+            if data_type.get_base() is None:
                 out_buffer.write(
                     "- DataType [name={}]: {}\n"
                     .format(data_type.get_name(), data_type.get_type().get_name()))
