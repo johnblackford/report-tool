@@ -303,7 +303,7 @@ class DataModelInputReader(AbstractInputReader):
         """Internal method to process the List Facet"""
         logger = logging.getLogger(self.__class__.__name__)
 
-        a_list = nodes.List()
+        a_list = nodes.ListFacet()
         a_list.set_min_items(item.get("@minItems", None))
         a_list.set_max_items(item.get("@maxItems", None))
         a_list.set_nested_brackets(item.get("@nestedBrackets", None))
