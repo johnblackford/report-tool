@@ -68,10 +68,12 @@ class DataModelInputReader(AbstractInputReader):
         # Process the document attributes and elements
         logger.debug(
             "Processing Document Element: spec attribute, file attribute, and description element")
+
         self.doc.set_spec(xml_dict["dm:document"].get("@spec", "UNKNOWN"))
         self.doc.set_file(xml_dict["dm:document"].get("@file", "UNKNOWN"))
-        self.doc.set_description(
-            xml_dict["dm:document"].get("description", "[Description not provided]"))
+
+        if "description" in xml_dict["dm:document"]:
+            self.doc.set_description(xml_dict["dm:document"]["description"])
 
         # There are no Imports in a Full CWMP-DM XML File, so no need to process them
 
@@ -115,8 +117,7 @@ class DataModelInputReader(AbstractInputReader):
 
         # Process the Model's Objects
         for object_item in model_item["object"]:
-            print object_item["@name"]
-#            root_data_model.add_model_object(self._process_object_element(object_item))
+            root_data_model.add_model_object(self._process_object_element(object_item))
 
         return self.doc
 
@@ -136,7 +137,8 @@ class DataModelInputReader(AbstractInputReader):
         if "@status" in item:
             data_type.set_status(item["@status"])
 
-        data_type.set_description(item.get("description", ""))
+        if "description" in item:
+            data_type.set_description(item["description"])
 
         if "list" in item:
             data_type.set_list(self._process_list_facet(item["list"]))
@@ -307,7 +309,10 @@ class DataModelInputReader(AbstractInputReader):
         a_list.set_min_items(item.get("@minItems", None))
         a_list.set_max_items(item.get("@maxItems", None))
         a_list.set_nested_brackets(item.get("@nestedBrackets", None))
-        a_list.set_description(item.get("description", ""))
+        
+        if "description" in item:
+            a_list.set_description(item["description"])
+
         logger.debug(
             "- Element is a List: minItems={}, maxItems={}"
             .format(a_list.get_min_items(), a_list.get_max_items()))
@@ -349,6 +354,7 @@ class DataModelInputReader(AbstractInputReader):
         a_size = nodes.Size()
         a_size.set_min_length(item.get("@minLength", None))
         a_size.set_max_length(item.get("@maxLength", None))
+
         if "description" in item:
             a_size.set_description(item["description"])
 
@@ -389,6 +395,7 @@ class DataModelInputReader(AbstractInputReader):
         a_path_ref.set_target_parent_scope(item.get("@targetParentScope", ""))
         a_path_ref.set_target_type(item.get("@targetType", ""))
         a_path_ref.set_target_data_type(item.get("@targetDataType", ""))
+
         if "description" in item:
             a_path_ref.set_description(item["description"])
 
@@ -431,6 +438,7 @@ class DataModelInputReader(AbstractInputReader):
         a_range.set_step(item.get("@step", 1))
         a_range.set_min_inclusive(item.get("@minInclusive", None))
         a_range.set_max_inclusive(item.get("@maxInclusive", None))
+
         if "description" in item:
             a_range.set_description(item["description"])
 
@@ -462,6 +470,7 @@ class DataModelInputReader(AbstractInputReader):
         an_enum = nodes.Enumeration()
         an_enum.set_value(item["@value"])
         an_enum.set_code(item.get("@code", None))
+
         if "description" in item:
             an_enum.set_description(item["description"])
 
@@ -494,6 +503,7 @@ class DataModelInputReader(AbstractInputReader):
         an_enum_ref.set_target_param(item["@targetParam"])
         an_enum_ref.set_target_param_scope(item.get("@targetParamScope", ""))
         an_enum_ref.set_null_value(item.get("@nullValue", ""))
+
         if "description" in item:
             an_enum_ref.set_description(item["description"])
 
@@ -524,6 +534,7 @@ class DataModelInputReader(AbstractInputReader):
         """Internal method to create a Pattern node object"""
         a_pattern = nodes.Pattern()
         a_pattern.set_value(item["@value"])
+
         if "description" in item:
             a_pattern.set_description(item["description"])
 
@@ -554,6 +565,7 @@ class DataModelInputReader(AbstractInputReader):
         """Internal method to create a Unit node object"""
         a_unit = nodes.Unit()
         a_unit.set_value(item["@value"])
+
         if "description" in item:
             a_unit.set_description(item["description"])
 
@@ -584,4 +596,79 @@ class DataModelInputReader(AbstractInputReader):
         logger.debug("Processing Bibliography Reference: \"{}\"".format(a_ref.get_name()))
 
         return a_ref
+
+
+
+    def _process_object_element(self, item):
+        """Internal method to process the Object Element"""
+        a_model_obj = nodes.ModelObject()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        a_model_obj.set_name(item["@name"])
+
+        if "@base" in item:
+            a_model_obj.set_base(item["@base"])
+
+        a_model_obj.set_access(item["@access"])
+        a_model_obj.set_min_entries(item["@minEntries"])
+        a_model_obj.set_max_entries(item["@maxEntries"])
+
+        if "@numEntriesParameter" in item:
+            a_model_obj.set_num_entries_parameter(item["@numEntriesParameter"])
+
+        if "@enableParameter" in item:
+            a_model_obj.set_enable_parameter(item["@enableParameter"])
+
+        if "description" in item:
+            a_model_obj.set_description(item["description"])
+
+        # Process the Object's Unique Keys, if they are present
+        if "uniqueKey" in item:
+            if isinstance(item["uniqueKey"], list):
+                for unique_key_item in item["uniqueKey"]:
+                    a_model_obj.add_unique_key(self._process_unique_key(unique_key_item))
+            else:
+                a_model_obj.add_unique_key(self._process_unique_key(item["uniqueKey"]))
+
+        # Process the Object's Parameters, if they are present
+        if "parameter" in item:
+            if isinstance(item["parameter"], list):
+                for parameter_item in item["parameter"]:
+                    print "Found Parameter {} for Object {}".format(parameter_item["@name"], a_model_obj.get_name())
+#                    a_model_obj.add_parameter(self._process_parameter(parameter_item))
+            else:
+                print "Found Parameter {} for Object {}".format(item["parameter"]["@name"], a_model_obj.get_name())
+#                a_model_obj.add_parameter(self._process_parameter(parameter_item))
+
+        # Validate the Unique Key Parameter References
+        ### TODO: loop through Unique Keys and check that their parameter references are int he Parameters - issue a warning if not
+
+        logger.debug("Processing Object: \"{}\"".format(a_model_obj.get_name()))
+
+        return a_model_obj
+
+
+
+    def _process_unique_key(self, item):
+        """Internal method to process the Unique Key Element"""
+        param_ref_list = []
+        a_unique_key = nodes.UniqueKey()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        if "@functional" in item:
+            a_unique_key.set_functional(item["@functional"])
+
+        if isinstance(item["parameter"], list):
+            for parameter_item in item["parameter"]:
+                param_ref = parameter_item["@ref"]
+                param_ref_list.append(param_ref)
+                a_unique_key.add_parameter_ref(param_ref)
+        else:
+            param_ref = item["parameter"]["@ref"]
+            param_ref_list.append(param_ref)
+            a_unique_key.add_parameter_ref(param_ref)
+
+        logger.debug("- Processing Unique Key: \"{}\"".format(", ".join(param_ref_list)))
+
+        return a_unique_key
 
