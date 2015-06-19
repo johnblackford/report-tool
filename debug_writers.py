@@ -66,22 +66,31 @@ class OneLineTextOutputWriter(AbstractOutputWriter):
         """Internal method to generate content in the output buffer"""
         trunc_desc = doc.get_description().split("\n")[0]
 
+        # Document Line
         out_buffer.write(
             "\nDocument [spec={}], [file={}]: {}\n"
             .format(doc.get_spec(), doc.get_file(), trunc_desc))
 
+        # Data Type Lines
         if self.write_data_types:
             self._generate_data_type_content(doc, out_buffer)
 
+        # Bibliography Reference Lines
         if self.write_biblio_refs:
             self._generate_biblio_ref_content(doc, out_buffer)
 
+        # Model Line
+        self._generate_model_content(doc, out_buffer)
+
+        # Model Object Lines
         if self.write_model_objects:
             self._generate_model_object_content(doc, out_buffer)
 
+        # Model Parameter Lines
         if self.write_model_parameters:
             self._generate_model_param_content(doc, out_buffer)
 
+        # Model Profile Lines
         if self.write_model_profiles:
             self._generate_model_profile_content(doc, out_buffer)
 
@@ -106,7 +115,26 @@ class OneLineTextOutputWriter(AbstractOutputWriter):
 
     def _generate_biblio_ref_content(self, doc, out_buffer):
         """Internal method to generate Bibliography Reference content in the output buffer"""
-        pass
+        out_buffer.write("\nDocument contains the following Bibliography References:\n")
+
+        for biblio_ref in doc.get_biblio_refs():
+            out_buffer.write("- Reference to [{}]\n".format(biblio_ref.get_name()))
+
+
+
+    def _generate_model_content(self, doc, out_buffer):
+        base_string = ""
+        data_model_type = "Root"
+
+        if doc.get_model().is_service_data_model():
+            data_model_type = "Service"
+
+        if doc.get_model().get_base() is not None:
+            base_string = " base={}]".format(doc.get_model().get_base())
+
+        out_buffer.write(
+            "\n{} {} Data Model {}\n"
+            .format(doc.get_model().get_name(), data_model_type, base_string))
 
 
 
