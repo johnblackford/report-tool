@@ -32,7 +32,7 @@ class DataModelInputReader(AbstractInputReader):
 
     def get_input_format(self):
         """Return the appropriate input format"""
-        return "cwmp-dm"
+        return "full-cwmp-dm"
 
 
     def process_properties(self, props):
@@ -81,6 +81,7 @@ class DataModelInputReader(AbstractInputReader):
         for data_type_item in xml_dict["dm:document"]["dataType"]:
             self.doc.add_data_type(self._process_data_type_element(data_type_item))
 
+        # Process bibliography=>reference elements in the document
         if "bibliography" in xml_dict["dm:document"]:
             for biblio_ref_item in xml_dict["dm:document"]["bibliography"]["reference"]:
                 self.doc.add_biblio_ref(self._process_biblio_ref(biblio_ref_item))
@@ -111,13 +112,18 @@ class DataModelInputReader(AbstractInputReader):
         if "description" in model_item:
             root_data_model.set_description(model_item["description"])
 
-        logger.debug("Processing {} {} Data Model".format(root_data_model.get_name(), data_model_type))
+        logger.debug(
+            "Processing {} {} Data Model".format(root_data_model.get_name(), data_model_type))
 
         # There won't be any Parameters associated with the Model in a Full CWMP-DM XML
 
         # Process the Model's Objects
         for object_item in model_item["object"]:
             root_data_model.add_model_object(self._process_object_element(object_item))
+
+        # Process the Model's Profiles
+        for profile_item in model_item["profile"]:
+            root_data_model.add_profile(self._process_profile(profile_item))
 
         return self.doc
 
@@ -141,7 +147,7 @@ class DataModelInputReader(AbstractInputReader):
             data_type.set_description(item["description"])
 
         if "list" in item:
-            data_type.set_list(self._process_list_facet(item["list"]))
+            data_type.set_list_element(self._process_list_facet(item["list"]))
 
         # If it doesn't have a base then it has a type;
         #  If it does have a base then it shouldn't have a type, but could have other facets
@@ -149,15 +155,15 @@ class DataModelInputReader(AbstractInputReader):
             logger.debug("- Element is a \"{}\" type".format(data_type.get_base()))
             self._process_data_type_facets(data_type, item)
         else:
-            self._process_data_type(data_type, item)
+            data_type.set_type_element(self._process_type_element(item))
 
         return data_type
 
 
 
 
-    def _process_data_type(self, data_type, item):
-        """Internal method to process the type for this DataType"""
+    def _process_type_element(self, item):
+        """Internal method to process the Type Elements: string, hexBinary, etc."""
         type_facet = None
         logger = logging.getLogger(self.__class__.__name__)
 
@@ -166,7 +172,7 @@ class DataModelInputReader(AbstractInputReader):
             logger.debug("- Element is a \"base64\" type")
             if item["base64"] is not None:
                 if "size" in item["base64"]:
-                    size_facet_list = self._process_size_facets(item["string"]["size"])
+                    size_facet_list = self._process_size_facets(item["base64"]["size"])
                     for size_facet in size_facet_list:
                         type_facet.add_size(size_facet)
         elif "boolean" in item:
@@ -180,7 +186,7 @@ class DataModelInputReader(AbstractInputReader):
             logger.debug("- Element is a \"hexBinary\" type")
             if item["hexBinary"] is not None:
                 if "size" in item["hexBinary"]:
-                    size_facet_list = self._process_size_facets(item["string"]["size"])
+                    size_facet_list = self._process_size_facets(item["hexBinary"]["size"])
                     for size_facet in size_facet_list:
                         type_facet.add_size(size_facet)
         elif "int" in item:
@@ -214,7 +220,7 @@ class DataModelInputReader(AbstractInputReader):
                 if "pathRef" in item["string"]:
                     path_ref_facet_list = self._process_path_ref_facets(item["string"]["pathRef"])
                     for path_ref_facet in path_ref_facet_list:
-                        data_type.add_path_ref_facet(path_ref_facet)
+                        type_facet.add_path_ref(path_ref_facet)
                 if "enumerationRef" in item["string"]:
                     enumeration_ref_facet_list = self._process_enumeration_ref_facets(item["string"]["enumerationRef"])
                     for enumeration_ref_facet in enumeration_ref_facet_list:
@@ -222,7 +228,7 @@ class DataModelInputReader(AbstractInputReader):
                 if "enumeration" in item["string"]:
                     enumeration_facet_list = self._process_enumeration_facets(item["string"]["enumeration"])
                     for enumeration_facet in enumeration_facet_list:
-                        data_type.add_enumeration(enumeration_facet)
+                        type_facet.add_enumeration(enumeration_facet)
                 if "size" in item["string"]:
                     size_facet_list = self._process_size_facets(item["string"]["size"])
                     for size_facet in size_facet_list:
@@ -258,7 +264,7 @@ class DataModelInputReader(AbstractInputReader):
         else:
             logger.error("Data Type expected and not found")
 
-        data_type.set_type(type_facet)
+        return type_facet
 
 
 
@@ -306,21 +312,30 @@ class DataModelInputReader(AbstractInputReader):
         logger = logging.getLogger(self.__class__.__name__)
 
         a_list = nodes.ListFacet()
-        a_list.set_min_items(item.get("@minItems", None))
-        a_list.set_max_items(item.get("@maxItems", None))
-        a_list.set_nested_brackets(item.get("@nestedBrackets", None))
-        
-        if "description" in item:
-            a_list.set_description(item["description"])
 
-        logger.debug(
-            "- Element is a List: minItems={}, maxItems={}"
-            .format(a_list.get_min_items(), a_list.get_max_items()))
+        if item is not None:
+            if "@minItems" in item:
+                a_list.set_min_items(item["@minItems"])
 
-        if "size" in item:
-            size_facet_list = self._process_size_facets(item["size"])
-            for size_facet in size_facet_list:
-                a_list.add_size(size_facet)
+            if "@maxItems" in item:
+                a_list.set_max_items(item["@maxItems"])
+
+            if "@nestedBrackets" in item:
+                a_list.set_nested_brackets(item["@nestedBrackets"])
+
+            if "description" in item:
+                a_list.set_description(item["description"])
+
+            logger.debug(
+                "- Element is a List: minItems={}, maxItems={}"
+                .format(a_list.get_min_items(), a_list.get_max_items()))
+
+            if "size" in item:
+                size_facet_list = self._process_size_facets(item["size"])
+                for size_facet in size_facet_list:
+                    a_list.add_size(size_facet)
+        else:
+            logger.debug("- Element is a List: minItems=0, maxItems=\"unbounded\"")
 
         return a_list
 
@@ -352,16 +367,21 @@ class DataModelInputReader(AbstractInputReader):
     def _create_size_facet(self, item):
         """Internal method to create a Size node object"""
         a_size = nodes.Size()
-        a_size.set_min_length(item.get("@minLength", None))
-        a_size.set_max_length(item.get("@maxLength", None))
 
-        if "description" in item:
-            a_size.set_description(item["description"])
+        if item is not None:
+            if "@minLength" in item:
+                a_size.set_min_length(item["@minLength"])
+
+            if "@maxLength" in item:
+                a_size.set_max_length(item["@maxLength"])
+
+            if "description" in item:
+                a_size.set_description(item["description"])
 
         return a_size
 
 
-    ### NOTE: instanceRef is not implemented as I don't believe that it is used
+    ### instanceRef is not implemented as I don't believe that it is used
 
 
     def _process_path_ref_facets(self, item):
@@ -487,11 +507,12 @@ class DataModelInputReader(AbstractInputReader):
         if isinstance(item, list):
             for list_item in item:
                 an_enum_ref = self._create_enumeration_ref_facet(list_item)
-                logger.debug("-- Adding Pattern: \"{}\"".format(an_enum_ref.target_param()))
+                logger.debug(
+                    "-- Adding Enumeration Ref to: {}".format(an_enum_ref.get_target_param()))
                 enumeration_ref_facet_list.append(an_enum_ref)
         else:
             an_enum_ref = self._create_enumeration_ref_facet(item)
-            logger.debug("-- Adding Pattern: \"{}\"".format(an_enum_ref.target_param()))
+            logger.debug("-- Adding Enumeation Ref to: {}".format(an_enum_ref.get_target_param()))
             enumeration_ref_facet_list.append(an_enum_ref)
 
         return enumeration_ref_facet_list
@@ -551,11 +572,11 @@ class DataModelInputReader(AbstractInputReader):
         if isinstance(item, list):
             for list_item in item:
                 a_unit = self._create_unit_facet(list_item)
-                logger.debug("-- Adding Pattern: \"{}\"".format(a_unit.get_value()))
+                logger.debug("-- Adding Units: \"{}\"".format(a_unit.get_value()))
                 units_facet_list.append(a_unit)
         else:
             a_unit = self._create_unit_facet(item)
-            logger.debug("-- Adding Pattern: \"{}\"".format(a_unit.get_value()))
+            logger.debug("-- Adding Units: \"{}\"".format(a_unit.get_value()))
             units_facet_list.append(a_unit)
 
         return units_facet_list
@@ -584,6 +605,8 @@ class DataModelInputReader(AbstractInputReader):
         a_ref.set_category(item.get("category", ""))
         a_ref.set_date(item.get("date", ""))
 
+        logger.debug("Processing Bibliography Reference: \"{}\"".format(a_ref.get_name()))
+
         if "hyperlink" in item:
             if isinstance(item["hyperlink"], list):
                 for hyperlink_item in item["hyperlink"]:
@@ -592,8 +615,6 @@ class DataModelInputReader(AbstractInputReader):
             else:
                 a_ref.add_hyperlink(item["hyperlink"])
                 logger.debug("- Adding Hyperlink: \"{}\"".format(item["hyperlink"]))
-
-        logger.debug("Processing Bibliography Reference: \"{}\"".format(a_ref.get_name()))
 
         return a_ref
 
@@ -604,14 +625,15 @@ class DataModelInputReader(AbstractInputReader):
         a_model_obj = nodes.ModelObject()
         logger = logging.getLogger(self.__class__.__name__)
 
+        # In a Full CWMP-DM XML, Objects always have a @name, @access, @minEntries, and @maxEntries
         a_model_obj.set_name(item["@name"])
-
-        if "@base" in item:
-            a_model_obj.set_base(item["@base"])
-
         a_model_obj.set_access(item["@access"])
         a_model_obj.set_min_entries(item["@minEntries"])
         a_model_obj.set_max_entries(item["@maxEntries"])
+
+        # In a Full CWMP-DM XML, Objects never have a @base
+        if "@base" in item:
+            a_model_obj.set_base(item["@base"])
 
         if "@numEntriesParameter" in item:
             a_model_obj.set_num_entries_parameter(item["@numEntriesParameter"])
@@ -621,6 +643,11 @@ class DataModelInputReader(AbstractInputReader):
 
         if "description" in item:
             a_model_obj.set_description(item["description"])
+
+        # In a Full CWMP-DM XML, Objects always have a @name and @access
+        logger.debug(
+            "Processing Object: \"{}\" with \"{}\" Access"
+            .format(a_model_obj.get_name(), a_model_obj.get_access))
 
         # Process the Object's Unique Keys, if they are present
         if "uniqueKey" in item:
@@ -634,16 +661,17 @@ class DataModelInputReader(AbstractInputReader):
         if "parameter" in item:
             if isinstance(item["parameter"], list):
                 for parameter_item in item["parameter"]:
-                    print "Found Parameter {} for Object {}".format(parameter_item["@name"], a_model_obj.get_name())
-#                    a_model_obj.add_parameter(self._process_parameter(parameter_item))
+                    a_model_obj.add_parameter(self._process_parameter(parameter_item))
             else:
-                print "Found Parameter {} for Object {}".format(item["parameter"]["@name"], a_model_obj.get_name())
-#                a_model_obj.add_parameter(self._process_parameter(parameter_item))
+                a_model_obj.add_parameter(self._process_parameter(item["parameter"]))
 
         # Validate the Unique Key Parameter References
-        ### TODO: loop through Unique Keys and check that their parameter references are int he Parameters - issue a warning if not
-
-        logger.debug("Processing Object: \"{}\"".format(a_model_obj.get_name()))
+        for unique_key_instance in a_model_obj.get_unique_keys():
+            for unique_key_param_ref in unique_key_instance.get_parameter_refs():
+                if not a_model_obj.has_parameter(unique_key_param_ref):
+                    logger.warning(
+                        "Unique Key for Object {} References {} Parameter that can't be found"
+                        .format(a_model_obj.get_name(), unique_key_param_ref))
 
         return a_model_obj
 
@@ -671,4 +699,180 @@ class DataModelInputReader(AbstractInputReader):
         logger.debug("- Processing Unique Key: \"{}\"".format(", ".join(param_ref_list)))
 
         return a_unique_key
+
+
+
+    def _process_parameter(self, item):
+        """Internal method to process the Parameter Element"""
+        a_param = nodes.Parameter()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        # In a Full CWMP-DM XML, Parameters always have a @name, @access, and syntax
+        a_param.set_name(item["@name"])
+        a_param.set_access(item["@access"])
+
+        # In a Full CWMP-DM XML, Parameters never have a @base
+        if "@base" in item:
+            a_param.set_base(item["@base"])
+
+        if "@activeNotify" in item:
+            a_param.set_active_notify(item["@activeNotify"])
+
+        if "@forcedInform" in item:
+            a_param.set_forced_inform(item["@forcedInform"])
+
+        if "description" in item:
+            a_param.set_description(item["description"])
+
+        # In a Full CWMP-DM XML, Parameters always have a @name and @access
+        logger.debug(
+            "Processing Parameter: \"{}\" with \"{}\" Access"
+            .format(a_param.get_name(), a_param.get_access))
+
+        a_param.set_syntax(self._process_syntax(a_param.get_name(), item["syntax"]))
+
+        return a_param
+
+
+
+    def _process_syntax(self, param_name, item):
+        """Internal method to process the Syntax Element"""
+        a_syntax = nodes.Syntax()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        if "@hidden" in item:
+            a_syntax.set_hidden(item["@hidden"])
+
+        if "@command" in item:
+            a_syntax.set_command(item["@command"])
+
+        # In a Full CWMP-DM XML, Parameters always have a @name
+        logger.debug(
+            "- Processing Syntax: hidden=\"{}\", command=\"{}\""
+            .format(a_syntax.get_hidden(), a_syntax.get_command()))
+
+        if "list" in item:
+            a_syntax.set_list_element(self._process_list_facet(item["list"]))
+
+        # A Syntax Element will either have a DataType or a Type Element (string, int, etc.)
+        if "dataType" in item:
+            data_type_ref_name = item["dataType"]["@ref"]
+            a_syntax.set_data_type_ref(data_type_ref_name)
+
+            if not self.doc.has_data_type(data_type_ref_name):
+                logger.warning(
+                    "Parameter {} References {} Data Type that can't be found"
+                    .format(param_name, data_type_ref_name))
+        else:
+            a_syntax.set_type_element(self._process_type_element(item))
+
+        if "default" in item:
+            a_syntax.set_default(self._process_default(item["default"]))
+
+        return a_syntax
+
+
+
+    def _process_default(self, item):
+        """Internal method to process the Default Element"""
+        a_default = nodes.DefaultFacet()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        a_default.set_type_attribute(item["@type"])
+        a_default.set_value(item["@value"])
+
+        if "description" in item:
+            a_default.set_description(item["description"])
+
+        logger.debug(
+            "- Processing Default: type=\"{}\", value=\"{}\""
+            .format(a_default.get_type_attribute(), a_default.get_value()))
+
+        return a_default
+
+
+
+    def _process_profile(self, item):
+        """Internal method to process the Profile Element"""
+        a_profile = nodes.Profile()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        a_profile.set_name(item["@name"])
+
+        if "@base" in item:
+            a_profile.set_base(item["@base"])
+
+        if "@extends" in item:
+            a_profile.set_extends(item["@extends"])
+
+        if "@minVersion" in item:
+            a_profile.set_min_version(item["@minVersion"])
+
+        if "description" in item:
+            a_profile.set_description(item["description"])
+
+        logger.debug("Processing Profile: \"{}\"".format(a_profile.get_name()))
+
+        if "object" in item:
+            if isinstance(item["object"], list):
+                for object_item in item["object"]:
+                    a_profile.add_profile_object(self._process_profile_object(object_item))
+            else:
+                a_profile.add_profile_object(self._process_profile_object(item["object"]))
+
+        if "parameter" in item:
+            if isinstance(item["parameter"], list):
+                for parameter_item in item["parameter"]:
+                    a_profile.add_profile_parameter(self._process_profile_parameter(parameter_item))
+            else:
+                a_profile.add_profile_parameter(self._process_profile_parameter(item["parameter"]))
+
+        return a_profile
+
+
+
+    def _process_profile_object(self, item):
+        """Internal method to process the Profile's Object Element"""
+        a_profile_obj = nodes.ProfileObject()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        # A Profile Object will always have an @ref and @requirement
+        a_profile_obj.set_ref(item["@ref"])
+        a_profile_obj.set_requirement(item["@requirement"])
+
+        if "description" in item:
+            a_profile_obj.set_description(item["description"])
+
+        logger.debug(
+            "- Adding Profile Object: \"{}\" with \"{}\" Access"
+            .format(a_profile_obj.get_ref(), a_profile_obj.get_requirement()))
+
+        if "parameter" in item:
+            if isinstance(item["parameter"], list):
+                for parameter_item in item["parameter"]:
+                    a_profile_obj.add_profile_parameter(self._process_profile_parameter(parameter_item))
+            else:
+                a_profile_obj.add_profile_parameter(self._process_profile_parameter(item["parameter"]))
+
+        return a_profile_obj
+
+
+
+    def _process_profile_parameter(self, item):
+        """Internal method to process the Profile's Object Element"""
+        a_profile_param = nodes.ProfileParameter()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        # A Profile Object will always have an @ref and @requirement
+        a_profile_param.set_ref(item["@ref"])
+        a_profile_param.set_requirement(item["@requirement"])
+
+        if "description" in item:
+            a_profile_param.set_description(item["description"])
+
+        logger.debug(
+            "-- Adding Profile Parameter: \"{}\" with \"{}\" Access"
+            .format(a_profile_param.get_ref(), a_profile_param.get_requirement()))
+
+        return a_profile_param
 

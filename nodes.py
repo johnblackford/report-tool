@@ -147,16 +147,16 @@ class DataType(object):
     def set_description(self, value):
         self.description = value
 
-    def get_type(self):
+    def get_type_element(self):
         return self.type_element
 
-    def set_type(self, value):
+    def set_type_element(self, value):
         self.type_element = value
 
-    def get_list(self):
+    def get_list_element(self):
         return self.list_element
 
-    def set_list(self, value):
+    def set_list_element(self, value):
         self.list_element = value
 
     def add_size(self, item):
@@ -539,7 +539,6 @@ class Parameter(object):
         self.forced_inform = False
         self.description = ""
         self.syntax = None
-        self.default = None
 
 
     def get_name(self):
@@ -597,14 +596,6 @@ class Parameter(object):
     def set_syntax(self, value):
         """Set the Parameter's syntax element"""
         self.syntax = value
-
-    def get_default(self):
-        """Retrieve the Parameter's default element"""
-        return self.default
-
-    def set_default(self, value):
-        """Set the Parameter's default element"""
-        self.default = value
 
 
 
@@ -1256,7 +1247,7 @@ class EnumerationRef(FacetType):
         """Initialize the EnumerationRef FacetType"""
         super(EnumerationRef, self).__init__()
         self.target_param = ""
-        self.target_param_scope = ""
+        self.target_param_scope = "normal"
         self.null_value = ""
 
 

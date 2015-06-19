@@ -67,7 +67,7 @@ class TextOutputWriter(AbstractOutputWriter):
             if data_type.get_base() is None:
                 out_buffer.write(
                     "- DataType [name={}]: {}\n"
-                    .format(data_type.get_name(), data_type.get_type().get_name()))
+                    .format(data_type.get_name(), data_type.get_type_element().get_name()))
             else:
                 ### If it has a base then it doesn't have a type
                 out_buffer.write(
