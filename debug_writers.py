@@ -16,13 +16,17 @@ import cStringIO
 from abstract_classes import AbstractOutputWriter
 
 
-class TextOutputWriter(AbstractOutputWriter):
+class OneLineTextOutputWriter(AbstractOutputWriter):
     """Debug Text Output Writer"""
 
     def __init__(self):
         """Initialize internal variables"""
         self.doc = None
-        self.one_line_output = False
+        self.write_data_types = False
+        self.write_biblio_refs = False
+        self.write_model_objects = False
+        self.write_model_parameters = False
+        self.write_model_profiles = False
 
 
 
@@ -34,8 +38,12 @@ class TextOutputWriter(AbstractOutputWriter):
     def process_properties(self, props):
         """Retrieve the OneLine property"""
         logger = logging.getLogger(self.__class__.__name__)
-        self.one_line_output = props.get("OneLine", False)
-        logger.info("One Line Output Property now set to: {}".format(self.one_line_output))
+        self.write_data_types = props.get("DataTypes", False)
+        self.write_biblio_refs = props.get("BiblioRefs", False)
+        self.write_model_objects = props.get("ModelObjects", False)
+        self.write_model_parameters = props.get("ModelParameters", False)
+        self.write_model_profiles = props.get("ModelProfiles", False)
+        logger.info("Write DataType Elements: {}".format(self.write_data_types))
 
 
 
@@ -43,10 +51,7 @@ class TextOutputWriter(AbstractOutputWriter):
         """Write the output as configured"""
         output_buffer = cStringIO.StringIO()
 
-        if self.one_line_output:
-            self._generate_one_line_content(doc, output_buffer)
-        else:
-            self._generate_content(doc, output_buffer)
+        self._generate_content(doc, output_buffer)
 
         if len(filename) == 0:
             self._write_to_console(output_buffer)
@@ -57,12 +62,35 @@ class TextOutputWriter(AbstractOutputWriter):
 
 
 
-    def _generate_one_line_content(self, doc, out_buffer):
-        """Internal method to generate 1-Line output content to an output buffer"""
+    def _generate_content(self, doc, out_buffer):
+        """Internal method to generate content in the output buffer"""
         trunc_desc = doc.get_description().split("\n")[0]
+
         out_buffer.write(
             "\nDocument [spec={}], [file={}]: {}\n"
             .format(doc.get_spec(), doc.get_file(), trunc_desc))
+
+        if self.write_data_types:
+            self._generate_data_type_content(doc, out_buffer)
+
+        if self.write_biblio_refs:
+            self._generate_biblio_ref_content(doc, out_buffer)
+
+        if self.write_model_objects:
+            self._generate_model_object_content(doc, out_buffer)
+
+        if self.write_model_parameters:
+            self._generate_model_param_content(doc, out_buffer)
+
+        if self.write_model_profiles:
+            self._generate_model_profile_content(doc, out_buffer)
+
+
+
+    def _generate_data_type_content(self, doc, out_buffer):
+        """Internal method to generate Data Type content in the output buffer"""
+        out_buffer.write("\nDocument contains the following Data Types:\n")
+
         for data_type in doc.get_data_types():
             if data_type.get_base() is None:
                 out_buffer.write(
@@ -75,14 +103,28 @@ class TextOutputWriter(AbstractOutputWriter):
                     .format(data_type.get_name(), data_type.get_base()))
 
 
-    def _generate_content(self, doc, out_buffer):
-        """Internal method to geneate verbose output content to an output buffer"""
-        out_buffer.write("\n")
-        out_buffer.write("Document Spec: {}\n".format(doc.get_spec()))
-        out_buffer.write("Document File: {}\n".format(doc.get_file()))
 
-        out_buffer.write("Document Description:\n")
-        out_buffer.write("{}\n".format(doc.get_description()))
+    def _generate_biblio_ref_content(self, doc, out_buffer):
+        """Internal method to generate Bibliography Reference content in the output buffer"""
+        pass
+
+
+
+    def _generate_model_object_content(self, doc, out_buffer):
+        """Internal method to generate Model Object content in the output buffer"""
+        pass
+
+
+
+    def _generate_model_param_content(self, doc, out_buffer):
+        """Internal method to generate Model Parameter content in the output buffer"""
+        pass
+
+
+
+    def _generate_model_profile_content(self, doc, out_buffer):
+        """Internal method to generate Model Profile content in the output buffer"""
+        pass
 
 
 
