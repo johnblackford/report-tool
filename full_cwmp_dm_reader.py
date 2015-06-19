@@ -78,8 +78,9 @@ class DataModelInputReader(AbstractInputReader):
         # There are no Imports in a Full CWMP-DM XML File, so no need to process them
 
         # Process dataType elements in the document
-        for data_type_item in xml_dict["dm:document"]["dataType"]:
-            self.doc.add_data_type(self._process_data_type_element(data_type_item))
+        if "dataType" in xml_dict["dm:document"]:
+            for data_type_item in xml_dict["dm:document"]["dataType"]:
+                self.doc.add_data_type(self._process_data_type_element(data_type_item))
 
         # Process bibliography=>reference elements in the document
         if "bibliography" in xml_dict["dm:document"]:
