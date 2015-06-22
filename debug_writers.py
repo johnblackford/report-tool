@@ -82,13 +82,13 @@ class OneLineTextOutputWriter(AbstractOutputWriter):
         # Model Line
         self._generate_model_content(doc, out_buffer)
 
-        # Model Object Lines
-        if self.write_model_objects:
-            self._generate_model_object_content(doc, out_buffer)
-
         # Model Parameter Lines
         if self.write_model_parameters:
             self._generate_model_param_content(doc, out_buffer)
+
+        # Model Object Lines
+        if self.write_model_objects:
+            self._generate_model_object_content(doc, out_buffer)
 
         # Model Profile Lines
         if self.write_model_profiles:
@@ -138,21 +138,97 @@ class OneLineTextOutputWriter(AbstractOutputWriter):
 
 
 
-    def _generate_model_object_content(self, doc, out_buffer):
-        """Internal method to generate Model Object content in the output buffer"""
-        pass
-
-
-
     def _generate_model_param_content(self, doc, out_buffer):
         """Internal method to generate Model Parameter content in the output buffer"""
-        pass
+        out_buffer.write("\nData Model contains the following Parameters:\n")
+
+        for param in doc.get_model().get_parameters():
+            if param.get_base() is None:
+                out_buffer.write(
+                    "- [name={}] is a {} Parameter with \"{}\" Access\n"
+                    .format(param.get_name(), 
+                            param.get_syntax().get_type_element().get_name(),
+                            param.get_access()))
+            else:
+                out_buffer.write(
+                    "- [base={}] is a {} Parameter with \"{}\" Access\n"
+                    .format(param.get_base(), 
+                            param.get_syntax().get_type_element().get_name(),
+                            param.get_access()))
+
+
+
+    def _generate_model_object_content(self, doc, out_buffer):
+        """Internal method to generate Model Object content in the output buffer"""
+        out_buffer.write("\nData Model contains the following Objects:\n")
+
+        for obj in doc.get_model().get_model_objects():
+            obj_type = "Single-Instance"
+
+            if obj.get_max_entries() > obj.get_min_entries():
+                obj_type = "Multi-Instance"
+
+            if obj.get_base() is None:
+                out_buffer.write(
+                    "- {} is a {} Object with \"{}\" Access\n"
+                    .format(obj.get_name(), obj_type, obj.get_access()))
+            else:
+                out_buffer.write(
+                    "- UPDATED :: {} is a {} Object with \"{}\" Access\n"
+                    .format(obj.get_base(), obj_type, obj.get_access()))
+
+            if len(obj.get_unique_keys()) >= 1:
+                for unique_key in obj.get_unique_keys():
+                    out_buffer.write(
+                        "-- Unique Key: {}\n".format(", ".join(unique_key.get_parameter_refs())))
+
+            if len(obj.get_parameters()) >= 1:
+                for param in obj.get_parameters():
+                    if param.get_syntax().get_type_element() is None:
+                        type_str = param.get_syntax().get_data_type_ref()
+                    else:
+                        type_str = param.get_syntax().get_type_element().get_name()
+
+                    if param.get_base() is None:
+                        out_buffer.write(
+                            "-- Parameter [{}]: Type=\"{}\" and Access=\"{}\"\n"
+                            .format(param.get_name(), type_str, param.get_access()))
+                    else:
+                        out_buffer.write(
+                            "-- UPDATED :: Parameter [{}]: Type=\"{}\" and Access=\"{}\"\n"
+                            .format(param.get_base(), type_str, param.get_access()))
 
 
 
     def _generate_model_profile_content(self, doc, out_buffer):
         """Internal method to generate Model Profile content in the output buffer"""
-        pass
+        out_buffer.write("\nData Model contains the following Profiles:\n")
+
+        for profile in doc.get_model().get_profiles():
+            out_buffer.write("- Profile [{}]".format(profile.get_name()))
+
+            if profile.get_base() is not None:
+                out_buffer.write(", base \"{}\"".format(profile.get_base()))
+
+            if profile.get_extends() is not None:
+                out_buffer.write(", extends \"{}\"".format(profile.get_extends()))
+
+            out_buffer.write("\n")
+
+            for prof_param in profile.get_profile_parameters():
+                out_buffer.write(
+                    "-- Parameter [{}]: Requirement \"{}\"\n"
+                    .format(prof_param.get_ref(), prof_param.get_requirement()))
+
+            for prof_obj in profile.get_profile_objects():
+                out_buffer.write(
+                    "-- Object [{}]: Requirement \"{}\"\n"
+                    .format(prof_obj.get_ref(), prof_obj.get_requirement()))
+    
+                for prof_param in prof_obj.get_profile_parameters():
+                    out_buffer.write(
+                        "--- Parameter [{}]: Requirement \"{}\"\n"
+                        .format(prof_param.get_ref(), prof_param.get_requirement()))
 
 
 
