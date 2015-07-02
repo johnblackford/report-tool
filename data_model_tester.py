@@ -56,9 +56,17 @@ class CWMPServer(HTTPServer):
     def serve_forever(self):
         """Keep the CWMP Server up until it is stopped"""
         self.stop = False
+        # TODO: Should we have a CWMPServer object and a StoppableHTTPServer object?
+        #        The CWMPServer could have all of this extra stuff and could contain
+        #        the StoppableHTTPServer.  We would have to set the CWMPServer in the
+        #        StoppableHTTPServer and provide a get_cwmp_server()
         self.data_model = []
         self.device_id = None
         self.root_data_model = None
+        self.requested_gpn = None
+        self.requested_gpv = None
+        # TODO: Is this a plain list? Need a pop()
+        self.pending_gpn_list = []
 
         print "Waiting for CWMP Inform..."
         while not self.stop:
@@ -101,6 +109,28 @@ class CWMPServer(HTTPServer):
     def add_object_to_data_model(self, data_model_obj):
         """Add a Data Model Object to the implemented data model"""
         self.data_model.append(data_model_obj)
+
+
+    def get_requested_gpn(self):
+        """Retrieve the Requested GPN that is being worked on"""
+        return self.requested_gpn
+
+    def set_requested_gpn(self, value):
+        """Set the Requested GPN to be worked on"""
+        self.requested_gpn = value
+
+
+    def get_requested_gpv(self):
+        """Retrieve the Requested GPV that is being worked on"""
+        return self.requested_gpv
+
+    def set_requested_gpv(self, value):
+        """Set the Requested GPV to be worked on"""
+        self.requested_gpv = value
+
+
+    # TODO: Implemented the Access Methods:
+    #        add_gpn_items(), get_next_gpn_item(), more_gpn_items()
 
 
 
@@ -148,11 +178,16 @@ class CWMPHandler(BaseHTTPRequestHandler):
                 if self.server.is_device_id_present():
                     logger.info("Processing incoming EMPTY HTTP POST as a CWMP Message")
                     self._write_incoming_cwmp_message("<EMPTY>")
+
+                    # Start with the Root Data Model Object
+                    a_data_model_obj = DataModelObject()
+                    a_data_model_obj.set_name(self.server.get_root_data_model())
+                    a_data_model_obj.set_access("readOnly")
+
+                    self.server.set_requested_gpn(a_data_model_obj)
+
                     # TODO: send a GPN for the Root Data Model
-                    # a_data_model_obj = a new DataModelObject based on self.server.get_root_data_model()
-                    # server.set_requested_gpn(a_data_model_obj)
-                    # _get_parameter_names(a_data_model_obj)
-#                    self._get_parameter_names(self.server.get_root_data_model())
+#                    self._get_parameter_names(a_data_model_obj)
 
                     # TODO: Remove after the _get_parameter_names method is complete
                     self._terminate_cwmp_session()
@@ -229,43 +264,48 @@ class CWMPHandler(BaseHTTPRequestHandler):
         logger = logging.getLogger(self.__class__.__name__)
 
         if "cwmp:Inform" in soap_body:
-            # TODO: Move this to its own function: _process_inform(soap_body, soap_header)
             logger.info("Incoming HTTP POST is a CWMP Inform RPC")
-
-            # Are we already in a CWMP Session with another device?
-            if self.server.is_device_id_present():
-                # YES, Response with a fault
-                logger.warning(
-                    "Already Processing Device {} - Sending an HTTP 500"
-                    .format(self.server.get_device_id()))
-                self.send_error(500, "Already Processing Device: %s" % self.server.get_device_id())
-            else:
-                # NO, Save the OUI-SN as the Found Device and send the InformResponse
-                cwmp_device_id = soap_body["cwmp:Inform"]["DeviceId"]
-                device_id = cwmp_device_id["OUI"] + "-" + cwmp_device_id["SerialNumber"]
-
-                param_list = soap_body["cwmp:Inform"]["ParameterList"]
-                for param_val_struct_item in param_list["ParameterValueStruct"]:
-                    if "SoftwareVersion" in param_val_struct_item["Name"]:
-                        self.server.set_root_data_model(param_val_struct_item["Name"].split(".")[0])
-
-                self.server.set_device_id(device_id)
-                self._send_inform_response(soap_header)
+            self._process_inform(soap_header, soap_body)
         elif "cwmp:GetParameterNamesResponse" in soap_body:
             logger.info("Incoming HTTP POST is a Response to a CWMP GetParameterNames RPC")
-#            self._process_get_parameter_names_response(soap_body)
+            self._process_gpn_response(soap_body)
         elif "cwmp:GetParameterValuesResponse" in soap_body:
             logger.info("Incoming HTTP POST is a Response to a CWMP GetParameterValues RPC")
-#            self._process_get_parameter_values_response(soap_body)
+            self._process_gpv_response(soap_body)
         else:
             logger.warning("Unsupported CWMP RPC encountered - Sending an HTTP 500")
             self.send_error(500, "Unsupported CWMP RPC encountered")
 
-        # TODO: CWMPServer holds state of requested and pending
-        # requested_gpn (DataModelObject)
-        # requested_gpv (DataModelObject)
-        # pending_gpn_list (DataModelObject List) - need pop()
 
+
+    def _process_inform(self, soap_header, soap_body):
+        """Process the incoming CWMP Inform RPC"""
+        logger = logging.getLogger(self.__class__.__name__)
+
+        # Are we already in a CWMP Session with another device?
+        if self.server.is_device_id_present():
+            # YES; Response with a fault
+            logger.warning(
+                "Already Processing Device {} - Sending an HTTP 500"
+                .format(self.server.get_device_id()))
+            self.send_error(500, "Already Processing Device: %s" % self.server.get_device_id())
+        else:
+            # NO; Save the OUI-SN as the Found Device and send the InformResponse
+            cwmp_device_id = soap_body["cwmp:Inform"]["DeviceId"]
+            device_id = cwmp_device_id["OUI"] + "-" + cwmp_device_id["SerialNumber"]
+
+            param_list = soap_body["cwmp:Inform"]["ParameterList"]
+            for param_val_struct_item in param_list["ParameterValueStruct"]:
+                if "SoftwareVersion" in param_val_struct_item["Name"]:
+                    self.server.set_root_data_model(param_val_struct_item["Name"].split(".")[0])
+
+            self.server.set_device_id(device_id)
+            self._send_inform_response(soap_header)
+
+
+
+    def _process_gpn_response(self, soap_body):
+        pass
         # TODO: _process_get_parameter_names_response(soap_body)
         # requested_data_model_obj = server.get_requested_gpn()
         # loop through returned parameter list
@@ -292,6 +332,10 @@ class CWMPHandler(BaseHTTPRequestHandler):
         # else:
         #   _terminate_cwmp_session()
 
+
+
+    def _process_gpv_response(self, soap_body):
+        pass
         # TODO: _process_get_parameter_values_response(soap_body)
         # requested_data_model_obj = server.get_requested_gpv()
         # loop through returned parameter list
@@ -304,9 +348,17 @@ class CWMPHandler(BaseHTTPRequestHandler):
         # else:
         #   _terminate_cwmp_session()
 
+
+
+    def _get_parameter_names(self, a_data_model_obj):
+        pass
         # TODO: _get_parameter_names(DataModelObject)
         # send a GPN with the name of the passed in Data Model Object and a True for NextLevel
 
+
+
+    def _get_parameter_values(self, param_list):
+        pass
         # TODO: _get_parameter_values(List of DataModelParameters)
         # send a GPV with the names of the passed in Data Model Parameters
 
