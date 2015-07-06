@@ -32,13 +32,13 @@ class DataModelSanityTester(object):
     def __init__(self):
         """Initialize the Tester"""
         self.implemented_data_model = None
-        self.cwmp = CWMPServer(("", 8000), CWMPHandler)
+        self.cwmp = CWMPServer(8000)
 
 
     def start_server(self):
         """Start the CWMP Server, which walks the device's data model"""
         # Start the Server
-        self.cwmp.serve_forever()
+        self.cwmp.start_server()
 
         # Retreive the implemented data model from the Server
         self.implemented_data_model = self.cwmp.get_implemented_data_model()
@@ -51,15 +51,9 @@ class DataModelSanityTester(object):
 
 
 
-class CWMPServer(HTTPServer):
+class CWMPServer(object):
     """An CWMP Server that is also an HTTP Server that can be stopped"""
-    def serve_forever(self):
-        """Keep the CWMP Server up until it is stopped"""
-        self.stop = False
-        # TODO: Should we have a CWMPServer object and a StoppableHTTPServer object?
-        #        The CWMPServer could have all of this extra stuff and could contain
-        #        the StoppableHTTPServer.  We would have to set the CWMPServer in the
-        #        StoppableHTTPServer and provide a get_cwmp_server()
+    def __init__(self, port):
         self.data_model = []
         self.device_id = None
         self.root_data_model = None
@@ -67,17 +61,23 @@ class CWMPServer(HTTPServer):
         self.requested_gpv = None
         # TODO: Is this a plain list? Need a pop()
         self.pending_gpn_list = []
+        self.http_server = StoppableHTTPServer(("", port), CWMPHandler)
+        self.http_server.set_cwmp_server(self)
 
+
+    def start_server(self):
+        """Keep the CWMP Server up until it is stopped"""
+        logger = logging.getLogger(self.__class__.__name__)
+        logger.info("Starting the CWMP Server")
         print "Waiting for CWMP Inform..."
-        while not self.stop:
-            self.handle_request()
+        self.http_server.serve_forever()
 
 
-    def stop_serving(self):
+    def stop_server(self):
         """Terminate the CWMP Server"""
         logger = logging.getLogger(self.__class__.__name__)
         logger.info("Stopping the CWMP Server")
-        self.stop = True
+        self.http_server.stop_serving()
 
 
     def get_device_id(self):
@@ -134,6 +134,36 @@ class CWMPServer(HTTPServer):
 
 
 
+class StoppableHTTPServer(HTTPServer):
+    """A Stoppable HTTP Server"""
+    def serve_forever(self):
+        """Keep the HTTP Server up until it is stopped"""
+        self.stop = False
+        logger = logging.getLogger(self.__class__.__name__)
+
+        logger.info("Starting the HTTP Server")
+        while not self.stop:
+            logger.info("Waiting for an HTTP Request")
+            self.handle_request()
+
+
+    def stop_serving(self):
+        """Terminate the HTTP Server"""
+        logger = logging.getLogger(self.__class__.__name__)
+        logger.info("Stopping the HTTP Server")
+        self.stop = True
+
+
+    def get_cwmp_server(self):
+        """Retrieve the value of the CWMP Server"""
+        return self.cwmp_server
+
+    def set_cwmp_server(self, value):
+        """Set the value of the CWMP Server"""
+        self.cwmp_server = value
+
+
+
 class CWMPHandler(BaseHTTPRequestHandler):
     """An HTTP Request Handler for the following CWMP RPCs:
         - Inform, GetParameterNamesResponse, GetParameterValuesResponse"""
@@ -159,6 +189,7 @@ class CWMPHandler(BaseHTTPRequestHandler):
         content = ""
         content_length = 0
         logger = logging.getLogger(self.__class__.__name__)
+        cwmp_server = self.server.get_cwmp_server()
 
         # Process the Request
         # TODO: Should we do chunked encoding? - Might have to, or might have to front it with nginx
@@ -175,16 +206,16 @@ class CWMPHandler(BaseHTTPRequestHandler):
             if content_length == 0:
                 # TODO: Probably want to also check to see if we have already started in on the GPN and GPV calls
                 #        if we haven't started on GPN/GPV then do below, if we have - fail the session
-                if self.server.is_device_id_present():
+                if cwmp_server.is_device_id_present():
                     logger.info("Processing incoming EMPTY HTTP POST as a CWMP Message")
                     self._write_incoming_cwmp_message("<EMPTY>")
 
                     # Start with the Root Data Model Object
                     a_data_model_obj = DataModelObject()
-                    a_data_model_obj.set_name(self.server.get_root_data_model())
+                    a_data_model_obj.set_name(cwmp_server.get_root_data_model())
                     a_data_model_obj.set_access("readOnly")
 
-                    self.server.set_requested_gpn(a_data_model_obj)
+                    cwmp_server.set_requested_gpn(a_data_model_obj)
 
                     # TODO: send a GPN for the Root Data Model
 #                    self._get_parameter_names(a_data_model_obj)
@@ -280,15 +311,16 @@ class CWMPHandler(BaseHTTPRequestHandler):
 
     def _process_inform(self, soap_header, soap_body):
         """Process the incoming CWMP Inform RPC"""
+        cwmp_server = self.server.get_cwmp_server()
         logger = logging.getLogger(self.__class__.__name__)
 
         # Are we already in a CWMP Session with another device?
-        if self.server.is_device_id_present():
+        if cwmp_server.is_device_id_present():
             # YES; Response with a fault
             logger.warning(
                 "Already Processing Device {} - Sending an HTTP 500"
-                .format(self.server.get_device_id()))
-            self.send_error(500, "Already Processing Device: %s" % self.server.get_device_id())
+                .format(cwmp_server.get_device_id()))
+            self.send_error(500, "Already Processing Device: %s" % cwmp_server.get_device_id())
         else:
             # NO; Save the OUI-SN as the Found Device and send the InformResponse
             cwmp_device_id = soap_body["cwmp:Inform"]["DeviceId"]
@@ -297,9 +329,9 @@ class CWMPHandler(BaseHTTPRequestHandler):
             param_list = soap_body["cwmp:Inform"]["ParameterList"]
             for param_val_struct_item in param_list["ParameterValueStruct"]:
                 if "SoftwareVersion" in param_val_struct_item["Name"]:
-                    self.server.set_root_data_model(param_val_struct_item["Name"].split(".")[0])
+                    cwmp_server.set_root_data_model(param_val_struct_item["Name"].split(".")[0])
 
-            self.server.set_device_id(device_id)
+            cwmp_server.set_device_id(device_id)
             self._send_inform_response(soap_header)
 
 
