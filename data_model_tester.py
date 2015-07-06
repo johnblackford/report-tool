@@ -59,7 +59,6 @@ class CWMPServer(object):
         self.root_data_model = None
         self.requested_gpn = None
         self.requested_gpv = None
-        # TODO: Is this a plain list? Need a pop()
         self.pending_gpn_list = []
         self.http_server = StoppableHTTPServer(("", port), CWMPHandler)
         self.http_server.set_cwmp_server(self)
@@ -129,8 +128,21 @@ class CWMPServer(object):
         self.requested_gpv = value
 
 
-    # TODO: Implemented the Access Methods:
-    #        add_gpn_items(), get_next_gpn_item(), more_gpn_items()
+    def append_gpn_items(self, partial_path_list):
+        """Add the DataModelObject List to the end of the Pending GPN List"""
+        self.pending_gpn_list.extend(partial_path_list)
+
+    def get_next_gpn_item(self):
+        """Get the next DataModelObject item from the Pending GPN List"""
+        return self.pending_gpn_list.pop(0)
+
+    def more_gpn_items(self):
+        """Check to see if there are more DataModelObject items in the Pending GPN List"""
+        items_in_list = False
+        if len(self.pending_gpn_list) > 0:
+            items_in_list = True
+
+        return items_in_list
 
 
 
@@ -204,9 +216,12 @@ class CWMPHandler(BaseHTTPRequestHandler):
             logger.info("  Content-Type: " + self.headers["Content-Type"])
 
             if content_length == 0:
-                # TODO: Probably want to also check to see if we have already started in on the GPN and GPV calls
-                #        if we haven't started on GPN/GPV then do below, if we have - fail the session
-                if cwmp_server.is_device_id_present():
+                # Validate that this is the Empty HTTP POST that is sent after the Inform
+                #  - Make sure that we have a Device ID from an Inform
+                #  - Make sure that we don't have any pending GPN or GPV
+                if (cwmp_server.get_requested_gpn() is None and 
+                        cwmp_server.get_requested_gpv() is None and
+                        cwmp_server.is_device_id_present()):
                     logger.info("Processing incoming EMPTY HTTP POST as a CWMP Message")
                     self._write_incoming_cwmp_message("<EMPTY>")
 
