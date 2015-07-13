@@ -48,6 +48,12 @@ class DataModelSanityTester(object):
         """Test the implemented data model"""
         print "Testing..."
         print "The Root Data Model is: " + self.cwmp.get_root_data_model()
+        print ""
+        print "The Implemented Data Modle is:"
+        for data_model_obj in self.implemented_data_model:
+            print "{}".format(data_model_obj.get_name())
+            for data_model_param in data_model_obj.get_parameters():
+                print "- {} = {}".format(data_model_param.get_name(), data_model_param.get_value())
 
 
 
@@ -67,6 +73,7 @@ class CWMPServer(object):
     def start_server(self):
         """Keep the CWMP Server up until it is stopped"""
         logger = logging.getLogger(self.__class__.__name__)
+        logger.info("========================")
         logger.info("Starting the CWMP Server")
         print "Waiting for CWMP Inform..."
         self.http_server.serve_forever()
@@ -89,6 +96,8 @@ class CWMPServer(object):
 
     def set_device_id(self, value):
         """Set the Device ID for the device to be worked on"""
+        logger = logging.getLogger(self.__class__.__name__)
+        logger.info("Device ID has now been set: {}".format(value))
         self.device_id = value
 
 
@@ -98,6 +107,8 @@ class CWMPServer(object):
 
     def set_root_data_model(self, value):
         """Set the Root Data Model for the device to be be worked on"""
+        logger = logging.getLogger(self.__class__.__name__)
+        logger.debug("Root Data Model has now been set: {}".format(value))
         self.root_data_model = value
 
 
@@ -107,6 +118,8 @@ class CWMPServer(object):
 
     def add_object_to_data_model(self, data_model_obj):
         """Add a Data Model Object to the implemented data model"""
+        logger = logging.getLogger(self.__class__.__name__)
+        logger.info("Object [{}] has been added to the data model".format(data_model_obj.get_name()))
         self.data_model.append(data_model_obj)
 
 
@@ -114,27 +127,37 @@ class CWMPServer(object):
         """Retrieve the Requested GPN that is being worked on"""
         return self.requested_gpn
 
-    def set_requested_gpn(self, value):
+    def set_requested_gpn(self, data_model_obj):
         """Set the Requested GPN to be worked on"""
-        self.requested_gpn = value
+        logger = logging.getLogger(self.__class__.__name__)
+        logger.debug("Requested GPN has now been set: {}".format(data_model_obj.get_name()))
+        self.requested_gpn = data_model_obj
 
 
     def get_requested_gpv(self):
         """Retrieve the Requested GPV that is being worked on"""
         return self.requested_gpv
 
-    def set_requested_gpv(self, value):
+    def set_requested_gpv(self, data_model_obj):
         """Set the Requested GPV to be worked on"""
-        self.requested_gpv = value
+        logger = logging.getLogger(self.__class__.__name__)
+        logger.debug("Requested GPV has now been set: {}".format(data_model_obj.get_name()))
+        self.requested_gpv = data_model_obj
 
 
     def append_gpn_items(self, partial_path_list):
         """Add the DataModelObject List to the end of the Pending GPN List"""
+        logger = logging.getLogger(self.__class__.__name__)
         self.pending_gpn_list.extend(partial_path_list)
+        logger.info("Appending {} items to the Pending GPN List".format(len(partial_path_list)))
+        logger.info("There are now {} items in the Pending GPN List".format(len(self.pending_gpn_list)))
 
     def get_next_gpn_item(self):
         """Get the next DataModelObject item from the Pending GPN List"""
-        return self.pending_gpn_list.pop(0)
+        logger = logging.getLogger(self.__class__.__name__)
+        a_data_model_obj = self.pending_gpn_list.pop(0)
+        logger.info("Retrieving [{}] from the Pending GPN List; {} items left".format(a_data_model_obj.get_name(), len(self.pending_gpn_list)))
+        return a_data_model_obj
 
     def more_gpn_items(self):
         """Check to see if there are more DataModelObject items in the Pending GPN List"""
@@ -212,14 +235,14 @@ class CWMPHandler(BaseHTTPRequestHandler):
             # Log the Request
             logger.info("Received incoming HTTP POST")
             logger.debug("  Path: " + self.path)
-            logger.info("  Content-Length: " + str(content_length))
-            logger.info("  Content-Type: " + self.headers["Content-Type"])
+            logger.debug("  Content-Length: " + str(content_length))
+            logger.debug("  Content-Type: " + self.headers["Content-Type"])
 
             if content_length == 0:
                 # Validate that this is the Empty HTTP POST that is sent after the Inform
                 #  - Make sure that we have a Device ID from an Inform
                 #  - Make sure that we don't have any pending GPN or GPV
-                if (cwmp_server.get_requested_gpn() is None and 
+                if (cwmp_server.get_requested_gpn() is None and
                         cwmp_server.get_requested_gpv() is None and
                         cwmp_server.is_device_id_present()):
                     logger.info("Processing incoming EMPTY HTTP POST as a CWMP Message")
@@ -227,16 +250,12 @@ class CWMPHandler(BaseHTTPRequestHandler):
 
                     # Start with the Root Data Model Object
                     a_data_model_obj = DataModelObject()
-                    a_data_model_obj.set_name(cwmp_server.get_root_data_model())
-                    a_data_model_obj.set_access("readOnly")
+                    a_data_model_obj.set_name(cwmp_server.get_root_data_model() + ".")
+                    a_data_model_obj.set_writable(False)
 
                     cwmp_server.set_requested_gpn(a_data_model_obj)
 
-                    # TODO: send a GPN for the Root Data Model
-#                    self._get_parameter_names(a_data_model_obj)
-
-                    # TODO: Remove after the _get_parameter_names method is complete
-                    self._terminate_cwmp_session()
+                    self._get_parameter_names(a_data_model_obj)
                 else:
                     # Invalid input - return a fault
                     logger.warning("Invalid Empty POST Received")
@@ -267,7 +286,8 @@ class CWMPHandler(BaseHTTPRequestHandler):
         message_type = "Incoming HTTP POST from [{}]".format(self.address_string())
 
         trace_logger.debug(message_type)
-        trace_logger.debug(message)
+        # TODO: Add in a Flag that logs the contents
+#        trace_logger.debug(message)
 
 
 
@@ -277,7 +297,8 @@ class CWMPHandler(BaseHTTPRequestHandler):
         message_type = "Outgoing HTTP Response to [{}]".format(self.address_string())
 
         trace_logger.debug(message_type)
-        trace_logger.debug(message)
+        # TODO: Add in a Flag that logs the contents
+#        trace_logger.debug(message)
 
 
 
@@ -340,11 +361,14 @@ class CWMPHandler(BaseHTTPRequestHandler):
             # NO; Save the OUI-SN as the Found Device and send the InformResponse
             cwmp_device_id = soap_body["cwmp:Inform"]["DeviceId"]
             device_id = cwmp_device_id["OUI"] + "-" + cwmp_device_id["SerialNumber"]
+            logger.info("The CWMP Inform Message is from {}".format(device_id))
 
             param_list = soap_body["cwmp:Inform"]["ParameterList"]
             for param_val_struct_item in param_list["ParameterValueStruct"]:
                 if "SoftwareVersion" in param_val_struct_item["Name"]:
-                    cwmp_server.set_root_data_model(param_val_struct_item["Name"].split(".")[0])
+                    root_dm = param_val_struct_item["Name"].split(".")[0]
+                    logger.info("The {} Device is using a {} Root Data Model".format(device_id, root_dm))
+                    cwmp_server.set_root_data_model(root_dm)
 
             cwmp_server.set_device_id(device_id)
             self._send_inform_response(soap_header)
@@ -352,62 +376,218 @@ class CWMPHandler(BaseHTTPRequestHandler):
 
 
     def _process_gpn_response(self, soap_body):
-        pass
-        # TODO: _process_get_parameter_names_response(soap_body)
-        # requested_data_model_obj = server.get_requested_gpn()
-        # loop through returned parameter list
-        #   if item ends in a "."
-        #     create a DataModelObject
-        #     add the new DataModelObject to the sub_object_list
-        #   else
-        #     create a new DataModelParameter if it doesn't end in a "."
-        #     add the new DataModelParameter to the requested_data_model_obj
-        #     add the new DataModelParameter to a gpv_param_list
-        # if gpv_param_list is not empty
-        #   set_requested_gpv(requested_data_model_obj)
-        #   appendd_list_to_pending_gpn_list(sub_object_list)
-        #   _get_parameter_values(gpv_param_list)
-        # elif sub_object_list is not empty:
-        #   a_data_model_obj = sub_object_list.pop()
-        #   set_requested_gpn(a_data_model_obj)
-        #   appendd_list_to_pending_gpn_list(sub_object_list)
-        #   _get_parameter_names(a_data_model_obj)
-        # elif not server.is_pending_gpn_list_empty()
-        #   next_gpn_obj = server.get_pending_gpn_list().pop()
-        #   server.set_requested_gpn(next_gpn_obj)
-        #   _get_parameter_names(next_gpn_obj)
-        # else:
-        #   _terminate_cwmp_session()
+        """Process an incoming GetParameterNames Response"""
+        gpv_param_list = []
+        sub_object_list = []
+        cwmp_server = self.server.get_cwmp_server()
+        logger = logging.getLogger(self.__class__.__name__)
+        requested_data_model_obj = cwmp_server.get_requested_gpn()
+
+        if not cwmp_server.is_device_id_present():
+            # Invalid GetParameterNames Response received - respond with a fault
+            logger.warning(
+                "No Device ID found - Invalid GPN Response received - Sending an HTTP 500")
+            self.send_error(500, "No Device ID found")
+        else:
+            logger.info("The CWMP GetParameterNames Response contains:")
+            param_list = soap_body["cwmp:GetParameterNamesResponse"]["ParameterList"]
+
+            if isinstance(param_list["ParameterInfoStruct"], list):
+                for param_info_struct_item in param_list["ParameterInfoStruct"]:
+                    dm_item = self._process_gpn_param_info_struct(param_info_struct_item)
+
+                    if dm_item.is_object():
+                        sub_object_list.append(dm_item)
+                    else:
+                        gpv_param_list.append(dm_item)
+            else:
+                dm_item = self._process_gpn_param_info_struct(param_list["ParameterInfoStruct"])
+
+                if dm_item.is_object():
+                    sub_object_list.append(dm_item)
+                else:
+                    gpv_param_list.append(dm_item)
+
+            # Add the DataModelObject to the CWMP Server
+            cwmp_server.add_object_to_data_model(requested_data_model_obj)
+
+            # Add the Data Model Parameters to the DataModelObject
+            for dm_param in gpv_param_list:
+                requested_data_model_obj.add_parameter(dm_param)
+
+            if len(gpv_param_list) > 0:
+                # We found Parameters to Retrieve Values for
+                cwmp_server.set_requested_gpv(requested_data_model_obj)
+                cwmp_server.append_gpn_items(sub_object_list)
+
+                # Send a GPV for the Parameters in the Object
+                self._get_parameter_values(gpv_param_list)
+            elif len(sub_object_list) > 0:
+                # We didn't find Parameters to Retrieve, but we have sub-objects
+                a_data_model_obj = sub_object_list.pop(0)
+                cwmp_server.set_requested_gpn(a_data_model_obj)
+                cwmp_server.append_gpn_items(sub_object_list)
+
+                # Send a GPN for the Sub-Objects of this Object
+                self._get_parameter_names(a_data_model_obj)
+            elif cwmp_server.more_gpn_items():
+                # We didn't find any Parameters or Sub-Objects, so work off the pending object list
+                logger.warning("Found an empty object [{}], but still proceeding...".format(requested_data_model_obj.get_name()))
+                next_gpn_obj = cwmp_server.get_next_gpn_item()
+                cwmp_server.set_requested_gpn(next_gpn_obj)
+
+                # Send a GPN for the Sub-Objects of this Object
+                self._get_parameter_names(next_gpn_obj)
+            else:
+                # Nothing left to do, so terminate the CWMP Session
+                self._terminate_cwmp_session()
+
+
+
+    def _process_gpn_param_info_struct(self, param_info_struct_item):
+        """Process the GPN ParameterInfoStruct Element"""
+        dm_item = None
+        is_writable = False
+        param_info_name = param_info_struct_item["Name"]
+        param_info_writable = param_info_struct_item["Writable"]
+        logger = logging.getLogger(self.__class__.__name__)
+
+        # Handle the different Writable Boolean Values
+        if (param_info_writable == "true" or
+                param_info_writable == "True" or
+                param_info_writable =="1"):
+            is_writable = True
+
+        # Create either the DataModelObject or DataModelParameter
+        if param_info_name.endswith("."):
+            dm_item = DataModelObject()
+            dm_item.set_name(param_info_name)
+            dm_item.set_writable(is_writable)
+            logger.info("- Sub-Object: {}".format(param_info_name))
+        else:
+            dm_item = DataModelParameter()
+            dm_item.set_full_param_name(param_info_name)
+            dm_item.set_writable(is_writable)
+            logger.info("- Parameter: {}".format(param_info_name))
+
+        return dm_item
 
 
 
     def _process_gpv_response(self, soap_body):
-        pass
-        # TODO: _process_get_parameter_values_response(soap_body)
-        # requested_data_model_obj = server.get_requested_gpv()
-        # loop through returned parameter list
-        #   get DataModelParameter from requested_data_model_obj
-        #   set the value
-        # if not server.is_pending_gpn_list_empty():
-        #   next_gpn_obj = server.get_pending_gpn_list().pop()
-        #   server.set_requested_gpn(next_gpn_obj)
-        #   _get_parameter_names(next_gpn_obj)
-        # else:
-        #   _terminate_cwmp_session()
+        """Process the incoming GetParameterValues Response"""
+        cwmp_server = self.server.get_cwmp_server()
+        logger = logging.getLogger(self.__class__.__name__)
+        requested_data_model_obj = cwmp_server.get_requested_gpn()
+
+        if not cwmp_server.is_device_id_present():
+            # Invalid GetParameterParameters Response received - respond with a fault
+            logger.warning(
+                "No Device ID found - Invalid GPV Response received - Sending an HTTP 500")
+            self.send_error(500, "No Device ID found")
+        else:
+            logger.info("The CWMP GetParameterParameters Response contains:")
+            param_list = soap_body["cwmp:GetParameterValuesResponse"]["ParameterList"]
+
+            if isinstance(param_list["ParameterValueStruct"], list):
+                for param_value_struct_item in param_list["ParameterValueStruct"]:
+                    name = param_value_struct_item["Name"]
+                    value = param_value_struct_item["Value"]["#text"]
+                    requested_data_model_obj.get_parameter(name).set_value(value)
+            else:
+                name = param_value_struct_item["Name"]
+                value = param_value_struct_item["Value"]["#text"]
+                requested_data_model_obj.get_parameter(name).set_value(value)
+
+            if cwmp_server.more_gpn_items():
+                next_gpn_obj = cwmp_server.get_next_gpn_item()
+                cwmp_server.set_requested_gpn(next_gpn_obj)
+
+                # Send a GPN for the Sub-Objects of this Object
+                self._get_parameter_names(next_gpn_obj)
+            else:
+                # Nothing left to do, so terminate the CWMP Session
+                self._terminate_cwmp_session()
 
 
 
     def _get_parameter_names(self, a_data_model_obj):
-        pass
-        # TODO: _get_parameter_names(DataModelObject)
-        # send a GPN with the name of the passed in Data Model Object and a True for NextLevel
+        """Send a GetParameterNames RPC to the CPE"""
+        out_buffer = cStringIO.StringIO()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        # Build CWMP Request
+        out_buffer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        out_buffer.write("<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n")
+        out_buffer.write("                  xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">\n")
+        out_buffer.write(" <soapenv:Header>\n")
+        out_buffer.write(" </soapenv:Header>\n")
+        out_buffer.write(" <soapenv:Body>\n")
+        out_buffer.write("  <cwmp:GetParameterNames>\n")
+        out_buffer.write("   <ParameterPath>{}</ParameterPath>\n".format(a_data_model_obj.get_name()))
+        out_buffer.write("   <NextLevel>1</NextLevel>\n")
+        out_buffer.write("  </cwmp:GetParameterNames>\n")
+        out_buffer.write(" </soapenv:Body>\n")
+        out_buffer.write("</soapenv:Envelope>\n")
+
+        # Send HTTP Response
+        self.send_response(200)
+        self.send_header("Content-type", "application/xml")
+        self.end_headers()
+        self.wfile.write(out_buffer.getvalue())
+
+        logger.info("Sending a CWMP GetParameterNames for: [{}]".format(a_data_model_obj.get_name()))
+        self._write_outgoing_cwmp_message(out_buffer.getvalue())
+
+        out_buffer.close()
 
 
 
     def _get_parameter_values(self, param_list):
-        pass
-        # TODO: _get_parameter_values(List of DataModelParameters)
-        # send a GPV with the names of the passed in Data Model Parameters
+        """Send a GetParameterValues RPC to the CPE"""
+        param_names = ""
+        first_param = True
+        out_buffer = cStringIO.StringIO()
+        logger = logging.getLogger(self.__class__.__name__)
+
+        # Build CWMP Request
+        out_buffer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        out_buffer.write("<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n")
+        out_buffer.write("                  xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\"\n")
+        out_buffer.write("                  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n")
+        out_buffer.write("                  xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">\n")
+        out_buffer.write(" <soapenv:Header>\n")
+        out_buffer.write(" </soapenv:Header>\n")
+        out_buffer.write(" <soapenv:Body>\n")
+        out_buffer.write("  <cwmp:GetParameterValues>\n")
+        out_buffer.write("   <ParameterNames soapenc:arrayType=\"xsd:string[{}]\">\n".format(len(param_list)))
+
+        # Insert the Parameters
+        for param in param_list:
+            if first_param:
+                first_param = False
+                param_names = param.get_name()
+            else:
+                param_names = param_names + "," + param.get_name()
+
+            out_buffer.write("    <string>{}</string>\n".format(param.get_full_param_name()))
+
+        # Finish the GPV
+        out_buffer.write("   </ParameterNames>\n")
+        out_buffer.write("  </cwmp:GetParameterValues>\n")
+        out_buffer.write(" </soapenv:Body>\n")
+        out_buffer.write("</soapenv:Envelope>\n")
+
+        # Send HTTP Response
+        self.send_response(200)
+        self.send_header("Content-type", "application/xml")
+        self.end_headers()
+        self.wfile.write(out_buffer.getvalue())
+
+        logger.info("Sending a CWMP GetParameterValues for: [{}]".format(param_names))
+        self._write_outgoing_cwmp_message(out_buffer.getvalue())
+
+        out_buffer.close()
 
 
 
@@ -415,11 +595,12 @@ class CWMPHandler(BaseHTTPRequestHandler):
         """Send an InformResponse back"""
         cwmp_id = None
         out_buffer = cStringIO.StringIO()
+        logger = logging.getLogger(self.__class__.__name__)
 
         if "cwmp:ID" in soap_header:
             cwmp_id = soap_header["cwmp:ID"]["#text"]
 
-        # Build Response
+        # Build CWMP Response
         out_buffer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
         out_buffer.write("<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n")
         out_buffer.write("                  xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">\n")
@@ -430,7 +611,7 @@ class CWMPHandler(BaseHTTPRequestHandler):
             out_buffer.write(
                 "  <cwmp:ID soapenv:mustUnderstand=\"1\">{}</cwmp:ID>\n".format(cwmp_id))
 
-        # Finish building the Response
+        # Finish building the CWMP Response
         out_buffer.write(" </soapenv:Header>\n")
         out_buffer.write(" <soapenv:Body>\n")
         out_buffer.write("  <cwmp:InformResponse>\n")
@@ -439,11 +620,13 @@ class CWMPHandler(BaseHTTPRequestHandler):
         out_buffer.write(" </soapenv:Body>\n")
         out_buffer.write("</soapenv:Envelope>\n")
 
-        # Send Response
+        # Send HTTP Response
         self.send_response(200)
         self.send_header("Content-type", "application/xml")
         self.end_headers()
         self.wfile.write(out_buffer.getvalue())
+
+        logger.info("Sending a CWMP InformResponse")
         self._write_outgoing_cwmp_message(out_buffer.getvalue())
 
         out_buffer.close()
@@ -468,70 +651,67 @@ class CWMPHandler(BaseHTTPRequestHandler):
 
 
 
-class DataModelObject(object):
-    """Represents an implemented Data Model Object"""
-    def __init__(self):
-        """Initialize the Data Model Object"""
+class DataModelItem(object):
+    """Base class for both DataModelObject and DataModelParameter"""
+    def __init__(self, is_obj):
         self.name = None
-        self.access = None
-        # TODO: Do we want/need to keep object heirarchy? - I don't think so
-#        self.sub_objects = []
-        self.parameters = []
+        self.writable = None
+        self.is_item_an_object = is_obj
+
+
+    def is_object(self):
+        """Return True if this is a DataModelObject and False otherwise"""
+        return self.is_item_an_object
 
 
     def get_name(self):
-        """Retrieve the Data Model Parameter's name"""
+        """Retrieve the Data Model Item's name"""
         return self.name
 
     def set_name(self, value):
-        """Set the name of the Data Model Parameter"""
+        """Set the name of the Data Model Item"""
         self.name = value
 
 
-    def get_access(self):
-        """Retrieve the Data Model Parameter's access"""
-        return self.access
+    def get_writable(self):
+        """Retrieve the Data Model Item's Writable Property"""
+        return self.writable
 
-    def set_access(self, value):
-        """Set the access of the Data Model Parameter"""
-        self.access = value
+    def set_writable(self, value):
+        """Set the Writable Property of the Data Model Item"""
+        self.writable = value
+
+
+
+class DataModelObject(DataModelItem):
+    """Represents an implemented Data Model Object"""
+    def __init__(self):
+        """Initialize the Data Model Object"""
+        super(DataModelObject, self).__init__(True)
+        self.parameter_dict = {}
 
 
     def add_parameter(self, item):
         """Add a Data Model Parameter to this Data Model Object"""
-        self.parameters.append(item)
+        self.parameter_dict[item.get_full_param_name()] = item
 
     def get_parameters(self):
         """Retrieve the list of Data Model Parameters"""
-        return self.parameters
+        return self.parameter_dict.values()
+
+    def get_parameter(self, param_name):
+        """Retrieve a specific Data Model Parameter"""
+        return self.parameter_dict[param_name]
 
 
 
-class DataModelParameter(object):
+class DataModelParameter(DataModelItem):
     """Represents an implemented Data Model Parameter"""
     def __init__(self):
         """Initialize the Data Model Parameter"""
-        self.name = None
-        self.access = None
+        super(DataModelParameter, self).__init__(False)
         self.value = None
-
-
-    def get_name(self):
-        """Retrieve the Data Model Parameter's name"""
-        return self.name
-
-    def set_name(self, value):
-        """Set the name of the Data Model Parameter"""
-        self.name = value
-
-
-    def get_access(self):
-        """Retrieve the Data Model Parameter's access"""
-        return self.access
-
-    def set_access(self, value):
-        """Set the access of the Data Model Parameter"""
-        self.access = value
+        self.full_param_name = None
 
 
     def get_value(self):
@@ -543,11 +723,21 @@ class DataModelParameter(object):
         self.value = value
 
 
+    def get_full_param_name(self):
+        """Retrieve the full parameter name of the Data Model Parameter"""
+        return self.full_param_name
+
+    def set_full_param_name(self, value):
+        """Set the full parameter name of the Data Model Parameter"""
+        self.set_name(value.split(".")[-1])
+        self.full_param_name = value
+
+
 
 if __name__ == "__main__":
     logging.basicConfig(filename="logs/cwmp-testing.log",
                         format='%(asctime)-15s %(name)s %(levelname)-8s %(message)s')
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
 
     tester = DataModelSanityTester()
     tester.start_server()
