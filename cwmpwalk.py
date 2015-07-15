@@ -30,6 +30,7 @@ import logging
 import xmltodict
 import cStringIO
 import sys, getopt
+import subprocess
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
@@ -42,10 +43,10 @@ _VERSION = "0.1.0-alpha"
 class CWMPWalk(object):
     """Utilizes a simplified CWMP Server to issue GetParameterNames
         and GetParameterValues to walk a Device's CWMP Data Model"""
-    def __init__(self, port):
+    def __init__(self, ip_addr="127.0.0.1", port=8000):
         """Initialize the Object"""
         self.implemented_data_model = None
-        self.cwmp = CWMPServer(port)
+        self.cwmp = CWMPServer(ip_addr, port)
 
 
     def start_walk(self):
@@ -76,8 +77,9 @@ class CWMPWalk(object):
 
 class CWMPServer(object):
     """An CWMP Server that is also an HTTP Server that can be stopped"""
-    def __init__(self, port):
+    def __init__(self, ip_addr, port):
         self.port = port
+        self.ip_addr = ip_addr
         self.data_model = []
         self.device_id = None
         self.root_data_model = None
@@ -90,7 +92,7 @@ class CWMPServer(object):
 
     def start_server(self):
         """Keep the CWMP Server up until it is stopped"""
-        starting_msg = "Starting the CWMP Server at: {}".format("http://localhost:" + str(self.port))
+        starting_msg = "Starting the CWMP Server at: {}".format("http://" + self.ip_addr + ":" + str(self.port))
         logger = logging.getLogger(self.__class__.__name__)
 
         logger.info(starting_msg)
@@ -233,11 +235,10 @@ class CWMPHandler(BaseHTTPRequestHandler):
         """Handle the HTTP GET Messages, as invalid CWMP Messages"""
         # Log the Request
         logger = logging.getLogger(self.__class__.__name__)
-        logger.debug("Received incoming HTTP GET")
+        logger.warning("Received incoming HTTP GET")
         logger.debug("  Path: " + self.path)
 
         # Respond with a 404 Error (shouldn't process GET)
-        self.server.stop_serving()
         self.send_error(404, "CWMP File Not Found: %s" % self.path)
 
 
@@ -761,6 +762,7 @@ def main(argv):
     """Main CWMP Walk Tool Driver"""
 
     port = 8000
+    interface = "en0"
 
     ### TODO: The file name should probably be absolute instead of relative
     ###         (based on standard install location?)
@@ -780,7 +782,7 @@ def main(argv):
     logging.debug("Found Input Arguments: {}".format(argv))
 
     try:
-        opts, args = getopt.getopt(argv, "hp:", "port")
+        opts, args = getopt.getopt(argv, "hi:p:", "intf, port")
     except getopt.GetoptError:
         print "Error Encountered:"
         logging.error("Error Encountered:")
@@ -795,9 +797,12 @@ def main(argv):
     for opt, arg in opts:
         if opt in ('-h', "--help"):
             print usage_str
+            print "  -i|--intf     :: System Interface (e.g. 'en0') to run the CWMP ACS on"
             print "  -p|--port     :: Port to run the CWMP ACS on"
             print "  -V|--version  :: Print the version of the tool"
             sys.exit()
+        elif opt in ("-i", "--intf"):
+            interface = arg
         elif opt in ("-p", "--port"):
             port = int(arg)
         elif opt in ("-V", "--version"):
@@ -806,9 +811,19 @@ def main(argv):
 
 
     # Main logic
-    walker = CWMPWalk(port)
+    walker = CWMPWalk(_get_ip_address(interface), port)
     walker.start_walk()
     walker.print_results()
+
+
+def _get_ip_address(netdev='en0'):
+    """Retrieve the IP Address via a unix 'ifconfig' command"""
+    arg='ifconfig ' + netdev
+    p=subprocess.Popen(arg, shell=True, stdout=subprocess.PIPE)
+    data = p.communicate()
+    sdata = data[0].split('\n')
+    ipaddr = sdata[3].strip().split(' ')[1].split('/')[0]
+    return ipaddr
 
 
 

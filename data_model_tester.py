@@ -29,7 +29,7 @@ class DataModelSanityTester(object):
     def __init__(self):
         """Initialize the Tester"""
         self.implemented_data_model = None
-        self.cwmp_walker = CWMPWalk(8000)
+        self.cwmp_walker = CWMPWalk(port=8000)
 
 
     def test(self):
