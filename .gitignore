@@ -6,6 +6,3 @@ logs/*.log
 
 #Ignore the pyreverse UNL files
 *.png
-
-#Ignore the CWMP Examples
-CWMPExamples/*
