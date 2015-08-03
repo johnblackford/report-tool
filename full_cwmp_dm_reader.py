@@ -58,7 +58,7 @@ class DataModelInputReader(AbstractInputReader):
         }
 
         # Open the File for reading
-        with open(filename, "r") as in_file:
+        with open(filename, "rb") as in_file:
             logger.info("Starting to parse the input file: {}".format(filename))
             xml_dict = xmltodict.parse(in_file, process_namespaces=True, namespaces=namespaces)
             logger.info("Finished parsing the input file")

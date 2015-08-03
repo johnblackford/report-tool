@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """
 # File Name: report.py
@@ -161,8 +161,8 @@ def main(argv):
         ow_format = an_ow.get_output_format()
         output_writer_dict[ow_format] = an_ow
 
-    available_input_formats = input_reader_dict.keys()
-    available_output_formats = output_writer_dict.keys()
+    available_input_formats = list(input_reader_dict.keys())
+    available_output_formats = list(output_writer_dict.keys())
 
 
     # Usage string for input argument handling
@@ -180,12 +180,12 @@ def main(argv):
 
         opts, args = getopt.getopt(argv, "hi:I:o:O:vV", input_options)
     except getopt.GetoptError:
-        print "Error Encountered:"
+        print("Error Encountered:")
         logging.error("Error Encountered:")
-        print " - Unknown command line argument encountered"
+        print(" - Unknown command line argument encountered")
         logging.error(" - Unknown command line argument encountered")
-        print ""
-        print usage_str
+        print("")
+        print(usage_str)
         sys.exit(2)
 
 
@@ -194,13 +194,13 @@ def main(argv):
     # Process the input arguments
     for opt, arg in opts:
         if opt in ('-h', "--help"):
-            print usage_str
-            print "  -i|--input-format   :: Specify the input format (choice of: {})".format(available_input_formats)
-            print "  -I|--input-file     :: Specify the input file"
-            print "  -o|--output-format  :: Specify the output format (choice of: {})".format(available_output_formats)
-            print "  -O|--output-file    :: Specify the output file (defaults to console)"
-            print "  -v|--validate       :: Enable validation processing"
-            print "  -V|--version        :: Print the version of the tool"
+            print(usage_str)
+            print("  -i|--input-format   :: Specify the input format (choice of: {})".format(available_input_formats))
+            print("  -I|--input-file     :: Specify the input file")
+            print("  -o|--output-format  :: Specify the output format (choice of: {})".format(available_output_formats))
+            print("  -O|--output-file    :: Specify the output file (defaults to console)")
+            print("  -v|--validate       :: Enable validation processing")
+            print("  -V|--version        :: Print the version of the tool")
             sys.exit()
         elif opt in ("-i", "--input-format"):
             input_format = arg
@@ -213,7 +213,7 @@ def main(argv):
         elif opt in ("-v", "--validate"):
             validate_input = True
         elif opt in ("-V", "--version"):
-            print "Report Tool :: version={}".format(_VERSION)
+            print("Report Tool :: version={}".format(_VERSION))
             sys.exit()
 
 
@@ -234,13 +234,13 @@ def main(argv):
 
 
   # Validate the input arguments have the proper values
-    if input_reader_dict.has_key(input_format):
+    if input_format in input_reader_dict:
         input_reader = input_reader_dict[input_format]
     else:
         fatal_arg_error = True
         error_list.append("ERROR: Input Format not supported")
 
-    if output_writer_dict.has_key(output_format):
+    if output_format in output_writer_dict:
         output_writer = output_writer_dict[output_format]
     else:
         fatal_arg_error = True
@@ -249,13 +249,13 @@ def main(argv):
 
     # Processing input argument validation
     if fatal_arg_error:
-        print "Errors Encountered:"
+        print("Errors Encountered:")
         logging.error("Errors Encountered:")
         for err_msg in error_list:
             logging.error(" - {}".format(err_msg))
-            print " - {}".format(err_msg)
-        print ""
-        print usage_str
+            print(" - {}".format(err_msg))
+        print("")
+        print(usage_str)
         sys.exit(1)
     else:
         logging.info("Input Arguments have been validated")

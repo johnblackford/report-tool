@@ -8,8 +8,8 @@
 ##
 """
 
+import io
 import logging
-import cStringIO
 
 from abstract_classes import AbstractOutputWriter
 
@@ -47,7 +47,7 @@ class OneLineTextOutputWriter(AbstractOutputWriter):
 
     def write(self, doc, filename):
         """Write the output as configured"""
-        output_buffer = cStringIO.StringIO()
+        output_buffer = io.StringIO()
 
         self._generate_content(doc, output_buffer)
 
@@ -234,7 +234,7 @@ class OneLineTextOutputWriter(AbstractOutputWriter):
         """Internal method to generate verbose output content to the console"""
         logger = logging.getLogger(self.__class__.__name__)
         logger.info("Writing to the console")
-        print out_buffer.getvalue()
+        print(out_buffer.getvalue())
 
 
 
