@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 """
 ## File Name: abstract_classes.py
 ##

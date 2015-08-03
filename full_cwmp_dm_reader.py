@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 """
 # File Name: full_cwmp_dm_reader.py
 #
