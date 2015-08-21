@@ -42,7 +42,6 @@ class DataModelInputReader(AbstractInputReader):
 
     def read(self, filename):
         """Read the CWMP-DM XML file and process the contents"""
-        xml_dict = []
         logger = logging.getLogger(self.__class__.__name__)
 
         # Use these standard namespaces
@@ -87,14 +86,9 @@ class DataModelInputReader(AbstractInputReader):
 
         # There are no Components in a Full CWMP-DM XML File, so no need to process them
 
-        # There are no Parameters associated with the Model in a Full CWMP-DM XML File,
-        #   so no need to look for them
-
-        # There is only ever a single Object associated with the Model in a Full CWMP-DM XML File,
-        #   and it is the Root Data Model Object (Device:2.9, Device:1.7, etc.) - so no need to look
-        #   for more than that
         data_model_type = "Root"
         root_data_model = self.doc.get_model()
+        # TODO: Everything will fail if there are multiple models
         model_item = xml_dict["dm:document"]["model"]
 
         # Process the Model's Attributes
@@ -114,15 +108,29 @@ class DataModelInputReader(AbstractInputReader):
         logger.debug(
             "Processing {} {} Data Model".format(root_data_model.get_name(), data_model_type))
 
-        # There won't be any Parameters associated with the Model in a Full CWMP-DM XML
+        # Process the Model's Parameters, if they are present
+        if "parameter" in model_item:
+            if isinstance(model_item["parameter"], list):
+                for param_item in model_item["parameter"]:
+                    root_data_model.add_parameter(self._process_parameter(param_item))
+            else:
+                root_data_model.add_parameter(self._process_parameter(model_item["parameter"]))
 
         # Process the Model's Objects
-        for object_item in model_item["object"]:
-            root_data_model.add_model_object(self._process_object_element(object_item))
+        if "object" in model_item:
+            if isinstance(model_item["object"], list):
+                for obj_item in model_item["object"]:
+                    root_data_model.add_model_object(self._process_object_element(obj_item))
+            else:
+                root_data_model.add_model_object(self._process_object_element(model_item["object"]))
 
         # Process the Model's Profiles
-        for profile_item in model_item["profile"]:
-            root_data_model.add_profile(self._process_profile(profile_item))
+        if "profile" in model_item:
+            if isinstance(model_item["profile"], list):
+                for profile_item in model_item["profile"]:
+                    root_data_model.add_profile(self._process_profile(profile_item))
+            else:
+                root_data_model.add_profile(self._process_profile(model_item["profile"]))
 
         return self.doc
 

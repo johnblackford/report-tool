@@ -61,7 +61,6 @@ def _get_class_from_property(class_type, prop_item):
 def main(argv):
     """Main Report Tool Driver"""
 
-    prop_data = []
     input_file = ""
     input_format = ""
     output_file = ""
@@ -233,7 +232,7 @@ def main(argv):
         error_list.append("ERROR: Output Format not provided")
 
 
-  # Validate the input arguments have the proper values
+    # Validate the input arguments have the proper values
     if input_format in input_reader_dict:
         input_reader = input_reader_dict[input_format]
     else:
